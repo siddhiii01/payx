@@ -3,7 +3,8 @@ import type {Request, Response, NextFunction} from "express";
 import dotenv from "dotenv";
 import jwt, {JwtPayload} from "jsonwebtoken";
 import {prisma, connectDB} from "./db/prisma.js"
-
+import { SignupSchema } from "./schemas/SignupSchema.js";
+import z from "zod";
 
 dotenv.config();
 const app = express();
@@ -20,7 +21,7 @@ app.use(express.json());
 app.use((req: Request,res:Response, next: NextFunction) => {
     console.log("Incoming req: ");
     console.log(`req.headers: ${JSON.stringify(req.headers)}`)
-    console.log(`req.body: ${req.body}`);
+    console.log(`req.body: ${JSON.stringify(req.body)}`);
     console.log(`req.url: ${req.originalUrl}`);
     next();
 });
@@ -161,7 +162,25 @@ async function main(){
   console.log("All users: ", JSON.stringify(allUser, null, 2))
 }
 
-main()
+//main()
+
+app.post('/zod-testing', async (req: Request, res: Response) => {
+  try{
+    //Validates request body
+    const userData = SignupSchema.parse(req.body);
+
+    //userData is now 100% safe
+    const user = await prisma.user.create({data: userData});
+
+    res.status(201).json({
+      success: true,
+      user
+    });
+
+  } catch(error){
+      console.error(error)
+  }
+});
 
 app.listen(process.env.PORT, () => {
     console.log("Server is running")
