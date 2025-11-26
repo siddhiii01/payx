@@ -5,9 +5,12 @@ import jwt, {JwtPayload} from "jsonwebtoken";
 import {prisma, connectDB} from "./db/prisma.js"
 import { SignupSchema } from "./schemas/SignupSchema.js";
 import z, { success } from "zod";
+import bcrypt from "bcrypt"
+import e from "cors";
 
 dotenv.config();
 const app = express();
+const SALT_ROUNDS: number = 10; //tells how expensive hashing algorith shud be
 
 const privateKey = process.env.JWT_PRIVATE_KEY as string;
 const publicKey = process.env.JWT_PUBLIC_KEY as string;
@@ -207,13 +210,16 @@ app.post('/signup', async (req, res) => {
         message: "User already exist.Please login"
       })
     }
+    
+    //hash the password before storing in database
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     //Create a new user
     const user = await prisma.user.create({
       data: {
         name, 
         email, 
-        password
+        password: hashedPassword // Store hashed password
       }
     })
   
@@ -241,31 +247,47 @@ app.post('/login', async (req, res) => {
   try{
       const {email, password} = req.body;
 
-  if(!email || !password){
-    return res.status(400).json({
-      success: false,
-      messsage: "Email and password field should be filled"
-    })
-  }
+    if(!email || !password){
+      return res.status(400).json({
+        success: false,
+        messsage: "Email and password field should be filled"
+      })
+    }
 
-  const existingUser = await prisma.user.findUnique({
-    where: {email}
-  });
-
-  //compare the password
-  if(existingUser?.password == password){
-    res.status(200).json({
-      success: true,
-      message: "Successfull Logged in"
-    })
-  } else {
-    return res.status(400).json({
-      success: false,
-      message: "wrong password"
+    const existingUser = await prisma.user.findUnique({
+      where: {email}
     });
-  }
+
+    // Check if user exists
+    if (!existingUser) {
+      
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials"
+      });
+    } 
+    //compare the given password with the hashed password
+    const isPasswordValid = await bcrypt.compare(password, existingUser.password)
+
+    if(isPasswordValid){
+      res.status(200).json({
+        success: true,
+        message: "Successfully logged in",
+        user: {
+          id: existingUser.id,
+          name: existingUser.name,
+          email: existingUser.email
+        }
+      });
+    }else {
+        // Use same message as above for security
+        return res.status(401).json({
+          success: false,
+          message: "Invalid credentials"
+        });
+    }
   } catch(error){
-     console.error(error);
+     console.error("Login error: ", error);
       return res.status(500).json({
         success: false,
         message: "Internal server error"
