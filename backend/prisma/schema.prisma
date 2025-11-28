@@ -22,8 +22,7 @@ model User {
   refreshToken String? @unique //optional refresh token for authentication, can be nulll -> when present must be unique
   createdAt DateTime @default(now()) //auto-set to current time when user is created
 
-  @@map("users") //maps to user table in databse
-
+  
 }
 
 // Run migration
