@@ -9,7 +9,7 @@ import bcrypt from "bcrypt"
 import e from "cors";
 import { appConfig } from "@config/app.config.js";
 import { authConfig } from "@config/auth.config.js";
-
+import { successResponse, errorResponse, serverResponse } from "@utils/response.utils.js";
 
 const app = express();
 const SALT_ROUNDS: number = 10; //tells how expensive hashing algorith shud be
@@ -298,8 +298,19 @@ app.post('/login', async (req, res) => {
   
 });
 
-console.log("App Config: ", appConfig)
-console.log("Auth Config: ", authConfig)
+// console.log("App Config: ", appConfig)
+// console.log("Auth Config: ", authConfig)
+
+//testing
+app.get("/success", (req, res) => {
+  successResponse(res)//default parameter
+})
+app.get("/error", (req, res) => {
+  errorResponse(res, 'Something went wrong with your request')//default parameter
+})
+app.get("/server", (req, res) => {
+  serverResponse(res, )//default parameter
+})
 
 app.listen(appConfig.port, ()=>{
   console.log("Server is running")
