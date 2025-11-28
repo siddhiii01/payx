@@ -11,8 +11,12 @@ import { appConfig } from "@config/app.config.js";
 import { authConfig } from "@config/auth.config.js";
 import { successResponse, errorResponse, serverResponse } from "@utils/response.utils.js";
 import { AuthController } from "@controllers/auth.controllers.js";
+import { AuthMiddleware } from "@middlewares/auth.middleware.js";
+import cookieParser from "cookie-parser";
+
 
 const app = express();
+app.use(cookieParser());
 const SALT_ROUNDS: number = 10; //tells how expensive hashing algorith shud be
 
 const privateKey = process.env.JWT_PRIVATE_KEY as string;
@@ -215,6 +219,10 @@ app.get("/server", (req, res) => {
   serverResponse(res, )//default parameter
 })
 
+
+app.get("/auth", AuthMiddleware.authenticateUser, (req, res) => {
+  console.log("req.userId", (req as any).userId)
+})
 app.listen(appConfig.port, ()=>{
   console.log("Server is running")
 });

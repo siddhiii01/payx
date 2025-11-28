@@ -40,7 +40,7 @@ export class AuthController {
                 authConfig.secret,      //secret key
                 { expiresIn: authConfig.expiresIn as any} //options
             );
-            console.log("Access Token: ", accessToken);
+            
 
             //creating refresh token -> for token renewal
             const refreshToken = jwt.sign(
@@ -61,6 +61,8 @@ export class AuthController {
                 maxAge: 15 * 60 * 1000,
                 sameSite: "strict"
             });
+
+            console.log("Access Token: ", req.cookies.accessToken);
             res.cookie("refreshToken", refreshToken, {
                 httpOnly: true,
                 secure: appConfig.nodeEnv === "production",
@@ -129,5 +131,8 @@ export class AuthController {
         }
     }
 
+    static logout = async (req: Request, res: Response) => {
+        
+    }
     
 }
