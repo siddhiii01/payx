@@ -174,23 +174,23 @@ async function main(){
 
 //main()
 
-  app.post('/zod-testing', async (req: Request, res: Response) => {
-    try{
-      //Validates request body
-      const userData = SignupSchema.parse(req.body);
+  // app.post('/zod-testing', async (req: Request, res: Response) => {
+  //   try{
+  //     //Validates request body
+  //     const userData = SignupSchema.parse(req.body);
 
-      //userData is now 100% safe
-      const user = await prisma.user.create({data: userData});
+  //     //userData is now 100% safe
+  //     const user = await prisma.user.create({data: userData});
 
-      res.status(201).json({
-        success: true,
-        user
-      });
+  //     res.status(201).json({
+  //       success: true,
+  //       user
+  //     });
 
-    } catch(error){
-        console.error(error)
-    }
-  });
+  //   } catch(error){
+  //       console.error(error)
+  //   }
+  // });
 
 //signup route
 app.post('/signup',  AuthController.register, async (req, res) => {
@@ -204,6 +204,17 @@ app.post('/login',AuthController.login, async (req, res) => {
   
   
 });
+
+//refresh token
+app.post('/refreshToken', AuthMiddleware.authenticateUser, AuthController.refreshToken, (req,res) => {
+  res.json({message:'refresh token page '})
+})
+
+//logout page
+
+app.get('/logout',AuthMiddleware.authenticateUser, AuthController.logout, (req, res) => {
+  console.log((req as any).user?.userId)
+})
 
 // console.log("App Config: ", appConfig)
 // console.log("Auth Config: ", authConfig)
@@ -222,7 +233,9 @@ app.get("/server", (req, res) => {
 
 app.get("/auth", AuthMiddleware.authenticateUser, (req, res) => {
   console.log("req.userId", (req as any).userId)
-})
+});
+
+
 app.listen(appConfig.port, ()=>{
   console.log("Server is running")
 });

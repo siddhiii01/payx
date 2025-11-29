@@ -62,7 +62,7 @@ export class AuthController {
                 sameSite: "strict"
             });
 
-            console.log("Access Token: ", req.cookies.accessToken);
+            console.log("Access Token: ", accessToken);
             res.cookie("refreshToken", refreshToken, {
                 httpOnly: true,
                 secure: appConfig.nodeEnv === "production",
@@ -132,7 +132,73 @@ export class AuthController {
     }
 
     static logout = async (req: Request, res: Response) => {
-        
+    //    const userId = (req as any).user?.userId;  //nai samjha
+        try{
+            const userId = (req as any).userId;
+
+            if(userId){
+                await prisma.user.update({where : {id: userId}, data: {refreshToken: null}})
+            }
+
+            res.clearCookie("accessToken")
+            res.clearCookie("refreshToken")
+
+            return res.json({
+                message: "logout successfully"
+            })
+        }catch(error){
+             console.error("Logout failed:", error);
+        }
     }
     
+    //acess token expires fast and refresh token last long -> from this function we will allow or not allow user to get new access token
+    static refreshToken = async (req: Request, res: Response) => {
+        try {//getting the user from req -> who the user is? -> this is set by authmiddleware
+            const userId = (req as any).userId;
+            //getting refresh token from the from the cookies
+            const refreshToken = req.cookies.refreshToken;
+
+            //if anyone of the missing user is not authorised
+            if(!userId || !refreshToken){
+                return res.json({
+                    message: "U are not authorised"
+                })
+            }
+
+            //now since userId -> is the has the same value from databse id key -> what id if someone tries to manually set userId
+            //so check whether that use is in the db
+            const user = await prisma.user.findUnique({where : {id: userId}});
+            if(!user || !user?.refreshToken){
+                res.json({
+                    message: "User doesn't exist in db or user dosen't have refreshToken"
+                });
+            }
+
+            if(refreshToken !== user?.refreshToken){
+                return res.json({
+                    message: "Token mistmatch"
+                })
+            }
+
+            //generate new access token
+            const newAccessToken = jwt.sign(
+                { userId },
+                authConfig.secret,
+                { expiresIn: authConfig.expiresIn as any}
+            );
+
+            
+            res.cookie("accessToken", newAccessToken, {
+                httpOnly: true,
+                secure: appConfig.nodeEnv === "production",
+                maxAge: 15 * 60 * 1000,
+                sameSite: "strict",
+
+            })
+
+            return res.json({ message: "Access token refreshed" });
+        } catch(error){
+            return res.status(500).json({ message: "Refresh failed" });
+        }
+    }
 }
