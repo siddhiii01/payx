@@ -22,7 +22,46 @@ model User {
   refreshToken String? @unique //optional refresh token for authentication, can be nulll -> when present must be unique
   createdAt DateTime @default(now()) //auto-set to current time when user is created
 
+  // Relationships
+  onRampTxns OnRampTx[]
+  balances Balance[]
+}
 
+model Balance {
+  id Int @id @default(autoincrement())
+  userId Int @unique
+  amount Int
+  locked Int //locked in pending tx
+  user User @relation(fields: [userId], references: [id])
+  lastUpdated DateTime @updatedAt
+}
+
+model OnRampTx {
+  id Int @id @default(autoincrement())
+  token String @unique //Unique Payment Refrence
+
+  //Tx Status
+  status OnRampStatus @default(Processing)
+
+  //Financial Details
+  amount Int
+
+  //Payment Provider Details
+  provider String //"HDFC" "SBI"
+
+  //Timeline Details
+  startTime DateTime @default(now())
+
+  // Relationship
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+}
+
+// Enums for better type safety
+enum OnRampStatus {
+  Processing
+  Success
+  Failed
 }
 
 // Run migration
