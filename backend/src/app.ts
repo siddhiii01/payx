@@ -14,11 +14,17 @@ import { AuthController } from "@controllers/auth.controllers.js";
 import { AuthMiddleware } from "@middlewares/auth.middleware.js";
 import cookieParser from "cookie-parser";
 import {initiateOnRampSchema} from "@validations/onramp.schema.js"
-import { initiateOnRampTx } from "@controllers/onramp.controllers.js";
+import { OnRampController } from "@controllers/onramp.controllers.js";
+
 
 
 const app = express();
 app.use(cookieParser());
+
+
+
+
+
 const SALT_ROUNDS: number = 10; //tells how expensive hashing algorith shud be
 
 const privateKey = process.env.JWT_PRIVATE_KEY as string;
@@ -241,7 +247,7 @@ app.get("/auth", AuthMiddleware.authenticateUser, (req, res) => {
 
 
 //endpoint for user to start adding money
-app.post("/onramp",AuthMiddleware.authenticateUser, initiateOnRampTx, (req: Request, res: Response) => {
+app.post("/onramp",AuthMiddleware.authenticateUser, OnRampController.initiateOnRampTx, (req: Request, res: Response) => {
  
   // const result = initiateOnRampSchema.safeParse(req.body);
   // if(!result.success){
