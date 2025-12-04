@@ -19,28 +19,29 @@ model User {
   email     String   @unique
   name      String?
   password  String
+  number String
   refreshToken String? @unique //optional refresh token for authentication, can be nulll -> when present must be unique
   createdAt DateTime @default(now()) //auto-set to current time when user is created
 
   // Relationships
   onRampTxns OnRampTx[]
-  balances Balance[]
+  balances Balance?
 }
 
 //User's wallet balance
 model Balance {
   id Int @id @default(autoincrement())
   userId Int @unique
-  amount Int //Available money
-  locked Int //Money in pending transactions
+  amount Int  @default(0) // available balance
+  locked Int @default(0)//Money in pending transactions
   user User @relation(fields: [userId], references: [id])
   lastUpdated DateTime @updatedAt
 }
 
-//Tracks each money-adding attempt
+//adding money from bank
 model OnRampTx {
   id Int @id @default(autoincrement())
-  token String @unique // Unique identifier for this transaction (sent to bank)
+  token String @unique // Unique identifier form payment provider
   //Tx Status
   status OnRampStatus @default(Processing)
 
