@@ -88,7 +88,7 @@ export class AuthController {
     }
 
     static register = async (req: Request, res: Response) => {
-         let {name, password, email} = req.body as z.infer<typeof  authSchema.register>;
+         let {name, password, email, number} = req.body as z.infer<typeof  authSchema.register>;
         try {
            
             //check if the user already exist in db thru email 
@@ -109,6 +109,7 @@ export class AuthController {
                 data: {
                     name, 
                     email, 
+                    number,
                     password: hashedPassword // Store hashed password
                 }
             })
@@ -119,7 +120,8 @@ export class AuthController {
                 user: {
                     id: user.id,
                     name: user.name,
-                    email: user.email
+                    email: user.email,
+                    number: user.number
                     }
                 })
         } catch(error){

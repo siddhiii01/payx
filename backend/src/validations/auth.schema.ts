@@ -9,7 +9,8 @@ const login = z.object({
 const register = z.object({
     name: z.string(),
     email: z.string().trim().min(1, "Email is required").email({ message: "Invalid email format" }),
-    password: z.string()
+    password: z.string(),
+    number: z.string()
 });
 
 export const  authSchema = {
