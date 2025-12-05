@@ -1,11 +1,9 @@
 import React, {useState} from "react";
 import type { ChangeEvent, FormEvent} from "react";
 import type { SignupCredentials } from "../types/auth.types";
-import axios from "axios";
+import SignupRoute from "../services/SignupService";
 
 
-
-const API = 'http://localhost:3000';
 export const Signup: React.FC = () => {
     const [formData, setFormData] = useState<SignupCredentials>({
         name: '',
@@ -26,15 +24,8 @@ export const Signup: React.FC = () => {
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault() //stops refreshing
 
-        //sending request to backend
-        try{
-            const response = await axios.post(`${API}/signup`, formData);
-            console.log("Backend Response: ", response.data);
-            setFormData({name: '', number:'', email: '', password: ''});
-
-        } catch(error: any){
-            console.error("Error while sending to backend", error);
-        }
+        await SignupRoute(formData);
+        setFormData({name: '', number:'', email: '', password: ''});
         
     }
 

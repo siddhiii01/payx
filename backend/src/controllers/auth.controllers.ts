@@ -1,4 +1,4 @@
-import { authSchema } from "@validations/auth.schema.js";
+import { authSchema } from "shared_schemas";
 import { z} from "zod";
 import type {Request, Response} from "express";
 import {prisma} from "@db/prisma.js"
@@ -10,6 +10,7 @@ import {appConfig} from "@config/app.config.js"
 export class AuthController {
     static login = async (req: Request, res: Response) => {
         const {email, password} = req.body as z.infer<typeof authSchema.login>;
+
         try{
             const existingUser = await prisma.user.findUnique({where: {email}});
 
@@ -88,8 +89,19 @@ export class AuthController {
     }
 
     static register = async (req: Request, res: Response) => {
-         let {name, password, email, number} = req.body as z.infer<typeof  authSchema.register>;
+         let  validation= authSchema.register.safeParse(req.body);
+         
         try {
+
+           if (!validation.success) {
+    return res.status(400).json({
+      success: false,
+      message: "Zod validation failed",
+      errors: validation.error.flatten()
+    });
+  }
+
+         const {name, email, password, number} = validation.data;
            
             //check if the user already exist in db thru email 
             const existingUser = await prisma.user.findUnique({ where: {email} });
