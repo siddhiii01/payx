@@ -1,6 +1,6 @@
 import { authSchema } from "shared_schemas";
 import { z} from "zod";
-import type {Request, Response} from "express";
+import type {NextFunction, Request, Response} from "express";
 import {prisma} from "@db/prisma.js"
 import bcrypt from 'bcrypt';
 import jwt from "jsonwebtoken";
@@ -93,12 +93,12 @@ export class AuthController {
          
         try {
 
-           if (!validation.success) {
-    return res.status(400).json({
-      success: false,
-      message: "Zod validation failed",
-      errors: validation.error.flatten()
-    });
+            if (!validation.success) {
+                return res.status(400).json({
+                success: false,
+                message: "Zod validation failed",
+                errors: validation.error.flatten()
+            });
   }
 
          const {name, email, password, number} = validation.data;
@@ -166,7 +166,7 @@ export class AuthController {
     }
     
     //acess token expires fast and refresh token last long -> from this function we will allow or not allow user to get new access token
-    static refreshToken = async (req: Request, res: Response) => {
+    static refreshToken = async (req: Request, res: Response, next: NextFunction) => {
         try {//getting the user from req -> who the user is? -> this is set by authmiddleware
             const userId = (req as any).userId;
             //getting refresh token from the from the cookies
@@ -210,7 +210,8 @@ export class AuthController {
 
             })
 
-            return res.json({ message: "Access token refreshed" });
+            //return res.json({ message: "Access token refreshed" });
+            next()
         } catch(error){
             return res.status(500).json({ message: "Refresh failed" });
         }

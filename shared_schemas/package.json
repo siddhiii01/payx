@@ -2,7 +2,7 @@
   "name": "shared_schemas",
   "version": "1.0.0",
   "main": "dist/app.js",
-  "types": "dist/app.d.ts",
+
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build"

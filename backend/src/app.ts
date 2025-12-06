@@ -6,6 +6,8 @@ import { AuthController } from "@controllers/auth.controllers.js";
 import { AuthMiddleware } from "@middlewares/auth.middleware.js";
 import cookieParser from "cookie-parser";
 import cors from "cors"
+import axios from "axios";
+import { log } from "console";
 
 const app = express();
 app.use(cookieParser());
@@ -59,6 +61,79 @@ app.get("/auth", AuthMiddleware.authenticateUser, (req, res) => {
   console.log("req.userId", (req as any).userId)
 });
 
+//add money to wallet -> recieve a request from frontend
+app.post('/add-money',AuthMiddleware.authenticateUser,AuthController.refreshToken, async (req: Request, res:Response) => {
+  const {amount, provider = "HDFC"} = req.body;
+
+  if(!amount || amount <=0){
+    return res.status(400).json({message: "Invalid amount"});
+  }
+
+  const userId = (req as any).userId //from cookies
+  if(!userId){
+    return res.status(401).json({message: "Unauthorized"})
+  }
+  
+
+  try{
+    // 1. Call Dummy Bank to create payment session
+    //calling dummy bank server using axios (server <----> server)
+    const bankResponse = await axios.post('http://localhost:3001/create-payment', {
+      amount: amount * 100, //// usually in paise, but we'll keep as rupees for simplicity 
+      provider,
+      userId,
+      redirectUrl: "http://localhost:3000/onramp/webhook" //Bank needs to know where to send the webhook later.
+    });
+
+    const {payment_token, paymentUrl} = bankResponse.data; //Bank returns a unique payment_token + payment URL
+
+    // 2. Save to your DB
+    const onramp = await prisma.onRampTx.create({
+      data: {
+        amount: amount * 100, //// store in paise to avoid decimals
+        provider,
+        userId,
+        token: payment_token,
+        status: "Processing",
+        startTime: new Date(),
+      }
+    });
+
+    // 3. Redirect user's BROWSER to bank's payment page
+    // Option A: If this is called from frontend (recommended)
+    return res.json({ paymentUrl });  // frontend will redirect
+
+    // Option B: If you want server to redirect directly (works but less flexible)
+    //  return res.redirect(paymentUrl);
+
+  }catch(error){
+    console.error("Bank communication failed:", error.message);
+    return res.status(500).json({ message: "Payment initiation failed" });
+  }
+  
+
+
+  //console.log("bankResponse ", bankResponse.data);
+
+  //saving to db
+  // 
+
+  // console.log(`onramp: ${onramp}`)
+  
+ 
+  //console.log(paymentResponse)
+
+  // res.json({
+  //   token: bankResponse.data.token,
+  //   paymentUrl :bankResponse.data.paymentUrl
+  // });
+
+  //now here we have to call dummy bank api -> but how ? through axios? res.redirect?
+});
+
+// app.get("/onramp/webhook", (req, res)=> {
+//   res.send('Webhook')
+// })
 
 app.listen(appConfig.port, ()=>{
   console.log("Server is running")
