@@ -45,9 +45,67 @@ app.post('/create-payment',(req, res) => {
 
 });
 
-app.get("/pay/:id", (req,res) => {
-   res.send(`on page given by dummy server pay${req.params.id}`)
+app.get("/pay/:token", (req,res) => {
+    const {token} = req.params
+    const payment = payments.get(token);
+    if(!payment){
+        return res.status(404).json({message: "Invalid or expired payment link"})
+    }
+
+   res.send(`<h1>HDFC Bank - Confirm Payment</h1>
+    <p>PayTM wants to debit ₹500 from your account</p>
+    <p>Amount: ₹${payment.amount}</p>
+    <p>User ID: ${payment.userId}</p>
+    <br/><br/>
+
+    <form action="/success/${token}" method="POST">
+    <button type="submit">Approve & Pay</button>
+    </form>
+
+    <form action="/failure/${token}" method="POST">
+    <button type="submit">Decline Payment</button>
+    </form>`)
 });
+
+app.post('/success/:token', (req, res) => {
+    const {token} = req.params;
+    const payment = payments.get(token);
+    if(!payment){
+        res.status(404).json({message: "Payment not found"})
+    }
+
+    //update the payment to Suceess
+    payment.status = "Success";
+    payments.set(token, payment);
+
+    //send webhook to paytm
+    
+    res.send(`
+        <h1>Payment Approved!</h1>
+        <p>₹${payment.amount} has been debited successfully.</p>
+        <p>You can close this window.</p>
+  `)
+});
+
+app.post('/failure/:token', (req, res) => {
+    const {token} = req.params;
+    const payment = payments.get(token)
+    if(!payment){
+        res.status(400).json({message: "Payment not found"});
+    }
+    
+    //update the payment to Failed
+    payment.status="Failed"
+    payments.set(token, payment);
+
+    //call webhook paytm here post req
+    res.send(`
+    <h1>Payment Declined</h1>
+    <p>No money was debited.</p>
+    <p>You can close this window.</p>
+  `)
+})
+
 // Later we'll add:
 // GET /pay/:token     → show approval page
 // POST /success/:token, /failure/:token → update + call webhook

@@ -106,7 +106,7 @@ app.post('/add-money',AuthMiddleware.authenticateUser,AuthController.refreshToke
     // Option B: If you want server to redirect directly (works but less flexible)
     //  return res.redirect(paymentUrl);
 
-  }catch(error){
+  }catch(error:any){
     console.error("Bank communication failed:", error.message);
     return res.status(500).json({ message: "Payment initiation failed" });
   }
@@ -131,9 +131,6 @@ app.post('/add-money',AuthMiddleware.authenticateUser,AuthController.refreshToke
   //now here we have to call dummy bank api -> but how ? through axios? res.redirect?
 });
 
-// app.get("/onramp/webhook", (req, res)=> {
-//   res.send('Webhook')
-// })
 
 app.listen(appConfig.port, ()=>{
   console.log("Server is running")
