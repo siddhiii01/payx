@@ -25,7 +25,11 @@ model User {
 
   // Relationships
   onRampTxns OnRampTx[]
-  balances Balance?
+  balances Balance? //why keep balance as optional -> if no bal set to 0
+  //here i got error when i kept Balance -> prisma error why?
+
+  bills Bills[]
+  transactions Transaction[]
 }
 
 //User's wallet balance
@@ -59,11 +63,70 @@ model OnRampTx {
   user User @relation(fields: [userId], references: [id])
 }
 
+
+model Billers{
+  id Int @id @default(autoincrement())
+  name String
+  category BillersCategory
+  createdAt DateTime @default(now())
+
+  bills Bills[] //bills that user owe to this provider
+  transactions Transaction[] //payment user attempted toward this provider
+}
+
+model Bills{
+  id Int @id @default(autoincrement())
+  amount Int //amount of the bill
+  dueDate DateTime //When should user pay by
+  // accountNumber - How do you link it to user's account with that biller? -> why ??
+  accountNumber String
+  status BillStatus @default(pending)
+  createdAt DateTime @default(now())
+
+  userId Int
+  billerId Int //to know which company the bill is for
+ 
+  transaction Transaction[] //i did not understand this
+  user User @relation(fields: [userId], references: [id])
+  biller Billers @relation(fields: [billerId], references: [id])
+}
+
+model Transaction{
+  id Int @id @default(autoincrement())
+  amount Int
+  status TransactionStatus
+  createdAt DateTime @default(now())
+
+  billId Int //Which bill was paid?
+  userId Int
+  billerId Int
+
+  bill Bills @relation(fields: [billId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  biller Billers @relation(fields: [billerId], references: [id])
+}
+
 // Enums for better type safety
 enum OnRampStatus {
   Processing
   Success
   Failed
+}
+
+enum BillersCategory {
+  Electricity
+  Recharge
+  Water
+}
+
+enum BillStatus {
+  pending
+  paid
+}
+
+enum TransactionStatus {
+  success
+  failed
 }
 
 // Run migration
