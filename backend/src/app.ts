@@ -68,9 +68,9 @@ app.get("/auth", AuthMiddleware.authenticateUser, (req, res) => {
 });
 
 //add money to wallet -> recieve a request from frontend
-app.post('/add-money',AuthMiddleware.authenticateUser, AuthController.refreshToken, async (req: Request, res:Response) => {
-  const {amount, provider = "HDFC"} = req.body;
 
+app.post('/addmoneytowallet',AuthMiddleware.authenticateUser, AuthController.refreshToken, async (req: Request, res:Response) => {
+  const {amount, provider = "HDFC"} = req.body;
   if(!amount || amount <=0){
     return res.status(400).json({message: "Invalid amount"});
   }
@@ -79,36 +79,49 @@ app.post('/add-money',AuthMiddleware.authenticateUser, AuthController.refreshTok
   if(!userId){
     return res.status(401).json({message: "Unauthorized"})
   }
-  
 
   try{
-    // 1. Call Dummy Bank to create payment session
+    //creating a record in db with status processing
+    // const walletmoney = await prisma.onRampTx.create({
+    //   data: {
+    //     amount: amount *100,
+    //     provider,
+    //     token: "ahjsdkhdsa", //this token will be provided from the bank right
+    //     userId,
+    //     status: "Processing",
+    //     startTime: new Date(),
+    //   }
+    // });
+
+    // console.log(`Saved to DB: ${walletmoney}`)
+
+    // 1. Call Dummy Bank to initiate Payment
     //calling dummy bank server using axios (server <----> server)
     const bankResponse = await axios.post('http://localhost:3001/create-payment', {
-      amount: amount * 100, //// usually in paise, but we'll keep as rupees for simplicity 
+      amount: amount * 100, // usually in paise, but we'll keep as rupees for simplicity 
       provider,
       userId,
-      redirectUrl: "http://localhost:3000/onramp/webhook" //Bank needs to know where to send the webhook later.
+      redirectUrl: "http://localhost:3000/webhook" // Bank will call this after payment
     });
 
-    //console.log("bankResponse", bankResponse)
-    const {payment_token, paymentUrl} = bankResponse.data; //Bank returns a unique payment_token + payment URL
+    console.log("bankResponse", bankResponse)
+    // const {payment_token, paymentUrl} = bankResponse.data; //Bank returns a unique payment_token + payment URL
 
-    // 2. Save to your DB
-    const onramp = await prisma.onRampTx.create({
-      data: {
-        amount: amount * 100, //// store in paise to avoid decimals
-        provider,
-        userId,
-        token: payment_token,
-        status: "Processing",
-        startTime: new Date(),
-      }
-    });
+    // // 2. Save to your DB
+    // const onramp = await prisma.onRampTx.create({
+    //   data: {
+    //     amount: amount * 100, //// store in paise to avoid decimals
+    //     provider,
+    //     userId,
+    //     token: payment_token,
+    //     status: "Processing",
+    //     startTime: new Date(),
+    //   }
+    // });
 
-    // 3. Redirect user's BROWSER to bank's payment page
-    // Option A: If this is called from frontend (recommended)
-    return res.json({ paymentUrl });  // frontend will redirect
+    // // 3. Redirect user's BROWSER to bank's payment page
+    // // Option A: If this is called from frontend (recommended)
+    // return res.json({ paymentUrl });  // frontend will redirect
 
     // Option B: If you want server to redirect directly (works but less flexible)
     //  return res.redirect(paymentUrl);
