@@ -1,19 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authSchema = void 0;
+exports.registerSchema = exports.loginSchema = void 0;
 const zod_1 = require("zod");
-const login = zod_1.z.object({
+exports.loginSchema = zod_1.z.object({
     email: zod_1.z.string().trim().min(1, "Email is required").email({ message: "Invalid Email format" }),
     password: zod_1.z.string().min(1, "Password is required")
 });
-const register = zod_1.z.object({
-    name: zod_1.z.string(),
+exports.registerSchema = zod_1.z.object({
+    name: zod_1.z.string().min(1, "Name is required"),
     email: zod_1.z.string().trim().min(1, "Email is required").email({ message: "Invalid email format" }),
     password: zod_1.z.string(),
-    number: zod_1.z.string()
+    phoneNumber: zod_1.z.string().length(10, "Phone number must be 10 digits")
 });
-exports.authSchema = {
-    login,
-    register
-};
+//Zod Does 2 thing at run time
+// -> 1. Validation
+// -> 2. Runtime Safety
 //# sourceMappingURL=auth.schemas.js.map

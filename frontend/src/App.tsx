@@ -1,12 +1,12 @@
 import { AddMoneyToWallet } from "./components/AddMoneyToWallet";
-import { Signin } from "./components/auth/Signin";
+import { Signup } from "./components/auth/Signup";
 
 function App() {
   return (
     <>
       {/* <Navbar /> */}
       {/* <Signup /> */}
-      <Signin />
+      <Signup />
       <AddMoneyToWallet />
     </>
   )

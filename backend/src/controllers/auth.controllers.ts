@@ -1,4 +1,4 @@
-import { authSchema } from "shared_schemas";
+import { registerSchema } from "shared_schemas";
 import type {NextFunction, Request, Response} from "express";
 import {prisma} from "@db/prisma.js"
 import bcrypt from 'bcrypt';
@@ -6,168 +6,142 @@ import jwt from "jsonwebtoken";
 import { authConfig } from "@config/auth.config.js";
 import {appConfig} from "@config/app.config.js"
 import { generateToken } from "@utils/jwtToken.js";
+import z from "zod";
 
 export class AuthController {
-    // static login = async (req: Request, res: Response) => {
-    //     const {email, password} = req.body as z.infer<typeof authSchema.login>;
+    static login = async (req: Request, res: Response) => {
+        const {email, password} = req.body as z.infer<typeof authSchema.login>;
 
-    //     try{
-    //         const existingUser = await prisma.user.findUnique({where: {email}});
+        try{
+            const existingUser = await prisma.user.findUnique({where: {email}});
 
-    //         // Check if user exists
-    //         if (!existingUser) {
-    //             return res.status(401).json({
-    //                 success: false,
-    //                 message: "Invalid credentials"
-    //             });
-    //         } 
-
-    //         //compare the given password with the hashed password
-    //         const isPasswordValid: any = await bcrypt.compare(password, existingUser.password)
-
-    //         if(isPasswordValid){
-    //             console.log("true")
-    //         }else {
-    //             // Use same message as above for security
-    //             return res.status(401).json({
-    //                 success: false,
-    //                 message: "Invalid credentials"
-    //             });
-    //         }
-
-    //         //creating short-lived token for API calls
-    //         const accessToken = jwt.sign(
-    //             {userId: existingUser.id}, //payload
-    //             authConfig.secret,      //secret key
-    //             { expiresIn: authConfig.expiresIn as any} //options
-    //         );
-            
-
-    //         //creating refresh token -> for token renewal
-    //         const refreshToken = jwt.sign(
-    //             {userId: existingUser.id},
-    //             authConfig.refreshSecret,
-    //             {expiresIn: authConfig.refreshExpiresIn as any}
-    //         );
-
-    //         console.log("Refresh Token: ", refreshToken);
-
-    //          await prisma.user.update({ where: { email }, data: { refreshToken } });
-
-
-    //         //setting accessToken & refresh Token  as cookie 
-    //         res.cookie("accessToken", accessToken, {
-    //             httpOnly: true,
-    //             secure: appConfig.nodeEnv === "production",
-    //             maxAge: 15 * 60 * 1000,
-    //             sameSite: "strict"
-    //         });
-
-    //         console.log("Access Token: ", accessToken);
-    //         res.cookie("refreshToken", refreshToken, {
-    //             httpOnly: true,
-    //             secure: appConfig.nodeEnv === "production",
-    //             maxAge: 24 * 60 * 60 * 1000,
-    //             sameSite: "strict"
-    //         });
-
-
-    //         res.json({
-    //             id: existingUser.id,
-    //             message: "SUccessful",
-    //             accessToken,
-    //             refreshToken
-    //         })
-
-    //     } catch(error){
-    //         console.error("Login error: ", error);
-    //         return res.status(500).json({
-    //             success: false,
-    //             message: "Internal server error"
-    //         });
-    //     }
-    // }
-
-    static authenticate = async (req: Request, res: Response) => {
-        //Validate Input using Zod
-        let  validation= authSchema.register.safeParse(req.body);
-
-        
-        console.log("validation.data ", validation.data)
-        try {
-            if (!validation.success) {
-                console.log(validation.error.flatten());
-                return res.status(400).json({
+            // Check if user exists
+            if (!existingUser) {
+                return res.status(401).json({
                     success: false,
-                    message: "Zod validation failed",
-                    errors: validation.error.flatten()
+                    message: "Invalid credentials"
+                });
+            } 
+
+            //compare the given password with the hashed password
+            const isPasswordValid: any = await bcrypt.compare(password, existingUser.password)
+
+            if(isPasswordValid){
+                console.log("true")
+            }else {
+                // Use same message as above for security
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid credentials"
                 });
             }
-            
-            //Extract Values
-            const {name, email, password, number} = validation.data;
-           
-            //check if the user already exist in db thru email 
-            const existingUser = await prisma.user.findUnique({ where: {number} });
 
+            //creating short-lived token for API calls
+            const accessToken = jwt.sign(
+                {userId: existingUser.id}, //payload
+                authConfig.secret,      //secret key
+                { expiresIn: authConfig.expiresIn as any} //options
+            );
+            
+
+            //creating refresh token -> for token renewal
+            const refreshToken = jwt.sign(
+                {userId: existingUser.id},
+                authConfig.refreshSecret,
+                {expiresIn: authConfig.refreshExpiresIn as any}
+            );
+
+            console.log("Refresh Token: ", refreshToken);
+
+             await prisma.user.update({ where: { email }, data: { refreshToken } });
+
+
+            //setting accessToken & refresh Token  as cookie 
+            res.cookie("accessToken", accessToken, {
+                httpOnly: true,
+                secure: appConfig.nodeEnv === "production",
+                maxAge: 15 * 60 * 1000,
+                sameSite: "strict"
+            });
+
+            console.log("Access Token: ", accessToken);
+            res.cookie("refreshToken", refreshToken, {
+                httpOnly: true,
+                secure: appConfig.nodeEnv === "production",
+                maxAge: 24 * 60 * 60 * 1000,
+                sameSite: "strict"
+            });
+
+
+            res.json({
+                id: existingUser.id,
+                message: "SUccessful",
+                accessToken,
+                refreshToken
+            })
+
+        } catch(error){
+            console.error("Login error: ", error);
+            return res.status(500).json({
+                success: false,
+                message: "Internal server error"
+            });
+        }
+    }
+
+    static register = async (req: Request, res: Response) => {
+        //Validate Input using Zod
+        let  validation= registerSchema.safeParse(req.body);
+        if (!validation.success) {
+            console.log(validation.error.flatten());
+            return res.status(400).json({
+                success: false,
+                message: "Zod validation failed",
+                errors: validation.error.flatten()
+            });
+        }
+        //Extract Values
+        const {name, email, password, phoneNumber} = validation.data;
+        try {
+            //check if the user already exist in db thru email 
+            const existingUser = await prisma.user.findUnique({ where: {phoneNumber} });
             // user exists -> LOGIN FLOW
             if(existingUser){
-                const isValid = await bcrypt.compare(password, existingUser.password)
-                if(!isValid){
-                    return res.status(400).json({
-                        success: false,
-                        message: "Invalid credentials"
-                    })
-                }
-                //generate token
-                const tokens = await generateToken(existingUser, res)
-                //Login Succsessful sending response to frontend
-                return res.status(200).json({
-                    success: true,
-                    message: "Login successful",
-                    user: {
-                        id: existingUser?.id,
-                        name: existingUser?.name,
-                        email: existingUser?.email,
-                        number: existingUser?.number
-                    },
-                    data:tokens
+                return res.status(409).json({
+                    success: false,
+                    message: "User already exists with this email or phone number",    
                 });
             }
-            
-            
-            //// user not found -> SIGNUP FLOW
+
+            // user not found -> SIGNUP FLOW
             //hash the password before storing in database
             const hashedPassword = await bcrypt.hash(password, 10);
             //Create a new user
             const newUser = await prisma.user.create({
                 data: {
                     email, 
-                    number,
+                    phoneNumber,
                     name,
                     password: hashedPassword // Store hashed password
                 }
             });
             
-            //generate jwt token
+            //Generate tokens for auto-login
             const tokens = await generateToken(newUser, res)
-            // respond with success
+            console.log("Successful : ", tokens, newUser )
             return res.status(201).json({
                 success: true,
                 message: "User created successfully",
                 user: {
-                id: newUser.id,
-                email: newUser.email,
-                number: newUser.number,
-                name: newUser.name
+                    id: newUser.id,
+                    email: newUser.email,
+                    phoneNumber: newUser.phoneNumber,
+                    name: newUser.name
                 },
                 data:tokens
             });
-
-          
-
         }catch(error){
-            console.error("Auth error:", error);
+            console.error("Signup error:", error);
             return res.status(500).json({
                 success: false,
                 message: "Internal server error"

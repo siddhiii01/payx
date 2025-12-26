@@ -46,12 +46,12 @@ app.post('/', (req, res) => {
   const username = req.body
   res.send(`${username}`)
 })
-app.post('/signin', AuthController.authenticate)
+// app.post('/signin', AuthController.signup)
 //signup route
-//app.post('/signup', AuthController.register);
+app.post('/signup', AuthController.register);
 
 //login route
-//app.post('/login',AuthController.login);
+app.post('/login',AuthController.login);
 
 //refresh token
 app.post('/refreshToken', AuthMiddleware.authenticateUser, AuthController.refreshToken, (req,res) => {
