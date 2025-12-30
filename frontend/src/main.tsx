@@ -1,11 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import App from './App';
+import './index.css'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Signup } from './components/auth/Signup';
 import { Login } from './components/auth/Login';
 import { AddMoneyToWallet } from './components/AddMoneyToWallet';
 import { P2P } from './components/P2P';
+import { Dashboard } from './components/Dashboard';
 
 const router = createBrowserRouter([
   {
@@ -17,6 +18,10 @@ const router = createBrowserRouter([
         // element: <Home />
       }
     ]
+  },
+  {
+    path: '/dashboard',
+    element: <Dashboard/>
   },
   {
     path: '/signup',
