@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment <%= status %></title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        .success { color: green; }
+        .failed { color: red; }
+        a { color: #0066cc; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <h1 class="<%= status === 'Success' ? 'success' : 'failed' %>">
+        Payment <%= status === 'Success' ? 'Successful' : 'Failed' %>!
+    </h1>
+    <p>Amount: ₹<%= amount %></p>
+    <p>Token: <%= token %></p>
+    <hr>
+    <p><a href="http://localhost:5173/addtowallet">← Back to PayX Wallet</a></p>
+</body>
+</html>

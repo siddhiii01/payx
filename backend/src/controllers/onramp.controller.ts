@@ -19,6 +19,12 @@ export const onramptx = async (req: Request, res: Response) => {
     const {amount, provider} = parsed.data; //Amount:  undefined
     //console.log("Amount: ", amount)
 
+    if(amount > 10000) { // ₹10,000 in paise
+    return res.status(400).json({
+        message: "Amount cannot exceed ₹10,000"
+    });
+}
+
     const userId = (req as any).userId //cookies
     if(!userId){
         return res.status(401).json({message: "user is not authorised"})
@@ -61,7 +67,11 @@ export const onramptx = async (req: Request, res: Response) => {
 
         //now here i have to make a post req to the frontend so that it happend automatically rght?
     } catch(error: any){
-        console.log("Error in Onramp", error.message)
+        console.log("Error in Onramp", error.message);
+        return res.status(500).json({ 
+            success: false,
+            message: "Failed to initiate payment. Please try again." 
+        });
     }
 
 

@@ -10,6 +10,7 @@ import { log } from "console";
 import { AuthMiddleware } from "@middlewares/auth.middleware.js";
 import { onramptx } from "@controllers/onramp.controller.js";
 import { p2p } from "@controllers/p2p.controller.js";
+import { Webhook } from "@controllers/webhook.handler.controller.js";
 
 const app = express();
 
@@ -75,44 +76,12 @@ app.get('/logout',AuthMiddleware.authenticateUser, AuthController.logout, (req, 
 
 app.post('/addmoneytowallet',AuthMiddleware.authenticateUser, onramptx);
 
-app.post('/dbupdate', async (req, res) => {
-  const {userId, token, amount} = req.body.paymentInformation
-  console.log("dbupdate", userId, token, amount)
-  try {
-        await prisma.$transaction([
-            prisma.balance.updateMany({
-                where: {
-                    userId: Number(userId)
-                },
-                data: {
-                    amount: {
-                        // You can also get this from your DB
-                        increment: Number(amount)
-                    }
-                }
-            }),
-            prisma.onRampTx.updateMany({
-                where: {
-                    token: token
-                }, 
-                data: {
-                    status: "Success",
-                }
-            })
-        ]);
 
-        res.json({
-            message: "Captured"
-        })
-    } catch(e) {
-        console.error(e);
-        res.status(411).json({
-            message: "Error while processing webhook"
-        })
-    }
-  //res.send("This was from webhook hablder to paytm")
-  // res.json({message: "This was from webhook hablder to paytm"})
-})
+
+// This route should not require authentication (like JWT or cookies).
+//  Why? Because the bank (your dummy bank server) is calling it from the 
+//  server-side, not from a user's browser. It doesn't have user cookies.
+app.post('/webhook', Webhook.webhookhanlder)
 
 
 app.listen(appConfig.port, ()=>{
@@ -120,26 +89,46 @@ app.listen(appConfig.port, ()=>{
 });
 
 
-// app.post('/webhook/bank')
 
-
-app.post('/hdfcWebhook', async (req, res) => {
-    const paymentInformation = {
-        token: req.body.token,  // FIX 2: match names
-        userId: req.body.userId,
-        amount: req.body.amount
-
-    }
-    
-
-    console.log("Calling to Paytm server")
-    const sendtopaytm = await axios.post("http://localhost:3000/dbupdate", {
-        paymentInformation
-    });
-
-    console.log("Webhook received:", paymentInformation);
-    //res.json({message: "A post request was sended to paytm"})
-})
 
 app.post('/p2ptransfer', p2p.walletTransfer)
+
+// app.post('/dbupdate', async (req, res) => {
+//   const {userId, token, amount} = req.body.paymentInformation
+//   console.log("dbupdate", userId, token, amount)
+//   try {
+//         await prisma.$transaction([
+//             prisma.balance.updateMany({
+//                 where: {
+//                     userId: Number(userId)
+//                 },
+//                 data: {
+//                     amount: {
+//                         // You can also get this from your DB
+//                         increment: Number(amount)
+//                     }
+//                 }
+//             }),
+//             prisma.onRampTx.updateMany({
+//                 where: {
+//                     token: token
+//                 }, 
+//                 data: {
+//                     status: "Success",
+//                 }
+//             })
+//         ]);
+
+//         res.json({
+//             message: "Captured"
+//         })
+//     } catch(e) {
+//         console.error(e);
+//         res.status(411).json({
+//             message: "Error while processing webhook"
+//         })
+//     }
+//   //res.send("This was from webhook hablder to paytm")
+//   // res.json({message: "This was from webhook hablder to paytm"})
+// })
 

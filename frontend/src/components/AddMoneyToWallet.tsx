@@ -2,12 +2,13 @@ import {useForm} from "react-hook-form";
 import { api } from "../utils/axios";
 import z from 'zod';
 import { zodResolver } from "@hookform/resolvers/zod";
-import type {JSX} from "react";
+import {useState, type JSX} from "react";
+
 
 const PROVIDERS = ["HDFC", "AXIS", "SBI"] as const;
 
 const moneySchema = z.object({
-    amount : z.number().min(1).max(10000),
+    amount : z.number().min(1, "Amount must be at least Rs.1").max(10000, "Amount cannot exceed 10,000rs."),
     provider: z.enum(PROVIDERS),
 });
 
@@ -21,20 +22,34 @@ export const AddMoneyToWallet = (): JSX.Element => {
         reset,
     } = useForm<Money>({resolver: zodResolver(moneySchema)});
 
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [redirecting, setRedirecting] = useState(false);
+
     const onSubmit = async (data: Money) => {
         try {
+            setErrorMsg(null);
+            setRedirecting(false);
+
             console.log("Money Added", data, typeof data);
             const response = await api.post(`/addmoneytowallet`,data);
             console.log("Paytm Server response on ramp: ",response.data);
+
             const { success, paymentUrl } = response.data;
-            if(success){
-                window.location.href = paymentUrl;
+            if(success && paymentUrl){
+                setRedirecting(true); // Show "Redirecting to bank..."
+                setTimeout(() => {
+                    window.location.href = paymentUrl;
+                }, 1000); // Give user time to see message
+            }else {
+                setErrorMsg("Failed to get payment URL");
             }
             console.log(window.location.href)
-            reset(); //clearing the form after success
+            
 
-        } catch(error){
+        } catch(error: any){
+            setRedirecting(false);
             console.error("Failed to add money", error);
+            setErrorMsg(error.response?.data?.message || "Failed to initiate payment");
         }
     }
 
@@ -43,6 +58,18 @@ export const AddMoneyToWallet = (): JSX.Element => {
         <div className="p-8 bg-gray-50 flex items-center justify-center">
             <div className="w-full bg-white shadow-lg rounded-xl p-8 max-w-md">
                 <h2 className="text-2xl font-semibold text-center mb-6">Add Money to PayX Wallet</h2>
+                {errorMsg && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        {errorMsg}
+                    </div>
+                )}
+
+                {redirecting && (
+                    <div className="text-center text-blue-600 mt-4">
+                        Redirecting to bank...
+                    </div>
+                )}
+
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-5"> 
                     <div>
                         <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Amount</label>
@@ -73,6 +100,8 @@ export const AddMoneyToWallet = (): JSX.Element => {
                     >
                         {isSubmitting ? "Proceed...": "Proceeding"}
                     </button>
+
+                    
                 </form>
             </div>
         </div>

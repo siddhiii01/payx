@@ -74,24 +74,27 @@ app.post('/success/:token', async (req, res) => {
     //update the payment to Suceess
     payment.status = "Success";
     payments.set(token, payment);
-    console.log("webhook req")
 
-    //send webhook to paytm
-    const web = await axios.post('http://localhost:3000/hdfcWebhook', {
+    //calling paytm webhook
+    try {
+        const webhookResponse  = await axios.post(payment.redirectUrl, {
+            token, 
+            userId: payment.userId,
+            amount: payment.amount,
+            status: "Success"
+        });
+        console.log("Webhook sent: Payment successful for token", token, webhookResponse );
+
+    } catch(error){
+        console.log("Failed to send webhook: ", error.message)
+    }
+
+    //showing confirmation page to user
+    res.render('confirmation', {
+        amount: payment.amount,
         token,
-        userId: payment.userId,
-        amount: payment.amount
-        
-    });
-    // res.json({ message: "DUmmy Bank server to Webhook done"})
-    
-    // res.send(`
-    //     <h1>Payment Approved!</h1>
-    //     <p>₹${payment.amount} has been debited successfully.</p>
-    //     <p>You can close this window.</p>
-    // `)
-    
-    
+        status: "Success",
+    }) 
 });
 
 //THIS IS FOR DECLINING THE PAYMENT
@@ -106,22 +109,30 @@ app.post('/failure/:token', async (req, res) => {
     payment.status="Failed"
     payments.set(token, payment);
 
-    //send webhook to paytm
-    const web= await axios.post('http://localhost:3000/hdfcWebhook', {
-        token,
-        userId: payment.userId,
-        amount: payment.amount
-        
+    //calling webhook paytm
+    try {
+        const webhookResponse  = await axios.post(payment.redirectUrl, {
+            token, 
+            userId: payment.userId,
+            amount: payment.amount,
+            status: "Failed"
+        }, );
+        console.log("Webhook sent: Payment failed for token", token, webhookResponse );
+         
+    } catch(error) {
+        console.error("Failed to send webhook:", error.message);
+    }
+
+    //showing confirmation to user
+    res.render('confirmation', {
+        status: "Failed",
+        amount: payment.amount,
+        token
     });
 
-    //call webhook paytm here post req
-    res.send(`
-    <h1>Payment Declined</h1>
-    <p>No money was debited.</p>
-    <p>You can close this window.</p>
-  `)
+    
 })
 
 app.listen(3001, () => {
-    console.log(`DUMMY BANK SERVER IS LISTENING ON PORT 5000`)
+    console.log(`DUMMY BANK SERVER IS LISTENING ON PORT 3001`)
 });

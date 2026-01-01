@@ -17,12 +17,14 @@
     <h1><%= provider %> Bank - Confirm Payment</h1>
     <p>PayX wants to debit <span class="amount">₹<%= amount  %></span> from your account.</p>
     <p>User ID: <%= userId %></p>
+
+    <p>Please confirm or decline the payment</p>
     
-    <form action="/success/<%= token %>" method="POST">
-        <button type="submit" class="approve">Approve & Pay</button>
+    <form action="/success/<%= token %>" method="POST" style="display:inline;">
+        <button type="submit" class="approve">Approve Payment</button>
     </form>
     
-    <form action="/failure/<%= token %>" method="POST">
+    <form action="/failure/<%= token %>" method="POST" style="display:inline;">
         <button type="submit" class="decline">Decline Payment</button>
     </form>
 
