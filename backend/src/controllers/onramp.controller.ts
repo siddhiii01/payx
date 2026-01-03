@@ -52,7 +52,7 @@ export const onramptx = async (req: Request, res: Response) => {
                 userId,
                 token: payment_token,
                 status: "Processing",
-                startTime: new Date(),
+                startTime: new Date(new Date().getTime() + (5.5 * 60 * 60 * 100)),
             }
         });
         console.log('Payment saved to db: ',onramp);

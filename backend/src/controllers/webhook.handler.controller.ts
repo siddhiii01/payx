@@ -65,21 +65,17 @@ export class Webhook {
                 }
 
                 //handling Successs Tx : -> update balance + onramp
-                await tx.balance.upsert({
+                await tx.balance.update({
                     where: {
                         userId: onRampTx.userId
                     },
-                    update: {
+                    data: {
                         amount: {
                             increment: onRampTx.amount
                         }
                     },
 
-                    create: {
-                        userId: onRampTx.userId,
-                        amount: onRampTx.amount,
-                        locked: 0
-                    }
+                    
                 });
 
                 await tx.onRampTx.update({
