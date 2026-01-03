@@ -1,5 +1,5 @@
 import {useForm} from "react-hook-form";
-import type React from "react"
+import type {JSX} from "react"
 import {registerSchema} from "shared_schemas";
 import type {  SignupCredentials } from "shared_schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,8 +9,7 @@ import { useState } from "react";
 import axios  from "axios";
 
 
-
-export const Signup: React.FC = () => {
+export const Signup = (): JSX.Element => {
     const {
         register, //A function that connects an input field to the form system.
         handleSubmit, //Wraps submit function.

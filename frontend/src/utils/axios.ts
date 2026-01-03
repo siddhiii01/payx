@@ -5,7 +5,7 @@ import axios from 'axios';
 // made with api automatically points to  backend
 export const api = axios.create({
     baseURL : import.meta.env.VITE_API_URL,
-    withCredentials: true
+    withCredentials: true //allow browser to attach cookies with req
     
 });
 

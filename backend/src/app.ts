@@ -17,12 +17,19 @@ const app = express();
 
 app.use(cors({
   origin: "http://localhost:5173",  
-  credentials: true,                
-}))
+  credentials: true,   //allow browser to send cookies when  making req from this origin -> cookies allowed
+}));
+
 app.use(cookieParser());
 // app.use(cors({
 //   origin: 'http://localhost:5173'  // Vite default
 // }))
+
+
+app.use((req, res, next) => {
+    console.log("Incoming cookies:", req.cookies);
+    next();
+});
 
 //every incoming requesting that browser is sending is goes through this middleware before acutally hitting our route
 //This looks at header: Content-Type: application/json

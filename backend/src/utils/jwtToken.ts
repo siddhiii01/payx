@@ -33,7 +33,7 @@ export const generateToken = async (user: {id: number}, res:Response) => {
         httpOnly: true,
         secure: appConfig.nodeEnv === "production",
         maxAge: 24 * 60 * 60 * 1000,
-        sameSite: "strict"
+        sameSite: appConfig.nodeEnv === "production" ? "strict" : "lax"
     });
 
     return { accessToken, refreshToken };

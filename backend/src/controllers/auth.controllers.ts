@@ -93,7 +93,7 @@ export class AuthController {
             if(existingUser){
                 return res.status(409).json({
                     success: false,
-                    message: "User already exists with this email or phone number",    
+                    message: "An account with these credentials already exists. Please try logging in.",    
                 });
             }
 
@@ -128,8 +128,7 @@ export class AuthController {
                     email: newUser.email,
                     phoneNumber: newUser.phoneNumber,
                     name: newUser.name
-                },
-                data:tokens
+                }
             });
 
            
