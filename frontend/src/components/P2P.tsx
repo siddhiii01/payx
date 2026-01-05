@@ -32,12 +32,17 @@ export const P2P= ():JSX.Element => {
     const onSubmit = async (data: Payment) => {
         setServerError(null) //always clear the error first 
 
+
         try{
             const response = await api.post('/p2ptransfer', data);
             console.log("Payment successful:", response.data);
         } catch(error:any){
-            if(!error.response){
-                setServerError("Oops! Our server is having issues right now. Please try again in a moment.")
+            if (!error.response) {
+                setServerError("Server is unreachable. Please try again later.");
+            } else if (error.response.data?.message) {
+                setServerError(error.response.data.message);
+            } else {
+                setServerError("An unexpected error occurred.");
             }
         }       
         
@@ -53,6 +58,7 @@ export const P2P= ():JSX.Element => {
             {errors.phoneNumber && <p>{errors.phoneNumber.message}</p>}
     
             <input 
+                type="number"
                 placeholder="Enter amount"
                 {...register("amount",{
                     valueAsNumber: true

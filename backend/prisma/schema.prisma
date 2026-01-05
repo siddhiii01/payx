@@ -1,3 +1,4 @@
+
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -20,24 +21,32 @@ model User {
   name String
   password  String
   phoneNumber String @unique
-  refreshToken String? @unique //optional refresh token for authentication, can be nulll -> when present must be unique
-  createdAt DateTime @default(now()) //auto-set to current time when user is created
-
+  refreshToken String? // Optional, no uniqueness (multiple nulls allowed)
+  createdAt DateTime @default(now()) //stores exact time when user was created ; set once ; never set automatically
+  updatedAt DateTime @updatedAt //store the lastes time when it was updated; automatically update by prisma
+  
   // Relationships
   onRampTxns OnRampTx[]
-  balances Balance? 
+  balances Balance? //user wallet balance -> Rule in fintech: wallet exists before money exists. -> make it optinal if not made it will throw prisma error
 
-  bills Bills[]
-  transactions Transaction[]
+  //Ledger 
+  ledgerEntries  TransactionLedger[]
+
+  //P2P Transaction -> separate realtions for sent/received
+  sentTransfers P2PTransfer[] @relation("SentTransfers") //all P2P transactions this user sent
+  receivedTransfers  P2PTransfer[] @relation("ReceivedTransfers") //all P2P transactions this user received
 }
 
 //User's wallet balance
 model Balance {
   id Int @id @default(autoincrement())
   userId Int @unique
-  amount Int  @default(0) // available balance
-  locked Int @default(0)//Money in pending transactions
   user User @relation(fields: [userId], references: [id])
+
+  amount Int// available balance
+  locked Int//Money in pending transactions
+  
+  createdAt DateTime @default(now())
   lastUpdated DateTime @updatedAt
 }
 
@@ -60,49 +69,60 @@ model OnRampTx {
   // Relationship
   userId Int
   user User @relation(fields: [userId], references: [id])
+
+  //ledger
+  ledgerEntries TransactionLedger[] // One credit entry for the user
 }
 
-
-model Billers{
+//P2P Transfer
+model P2PTransfer{
   id Int @id @default(autoincrement())
-  name String
-  category BillersCategory
-  createdAt DateTime @default(now())
 
-  bills Bills[] //bills that user owe to this provider
-  transactions Transaction[] //payment user attempted toward this provider
-}
+  //Sender & Reciever
+  senderId Int
+  sender User @relation("SentTransfers",fields: [senderId], references: [id])
 
-model Bills{
-  id Int @id @default(autoincrement())
-  amount Int //amount of the bill
-  dueDate DateTime //When should user pay by
-  // accountNumber - How do you link it to user's account with that biller? -> why ??
-  accountNumber String
-  status BillStatus @default(pending)
-  createdAt DateTime @default(now())
+  receiverId  Int
+  receiver User @relation("ReceivedTransfers", fields: [receiverId], references: [id])
 
-  userId Int
-  billerId Int //to know which company the bill is for
- 
-  transaction Transaction[] //i did not understand this
-  user User @relation(fields: [userId], references: [id])
-  biller Billers @relation(fields: [billerId], references: [id])
-}
-
-model Transaction{
-  id Int @id @default(autoincrement())
+  //Transaction Details
   amount Int
-  status TransactionStatus
+
+  //Status Management
+  status P2PTransferStatus @default(PENDING) 
+
+  //Idempotency - Prevent duplicate transactions
+  idempotencyKey String? @unique
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  billId Int //Which bill was paid?
+  //Related ledger Enteries
+  ledgerEntries   TransactionLedger[] // Debit for sender, credit for receiver
+
+}
+
+// Transaction ledger
+model TransactionLedger{
+  id Int @id @default(autoincrement())
+
+  //Link user to transaction
   userId Int
-  billerId Int
-
-  bill Bills @relation(fields: [billId], references: [id])
   user User @relation(fields: [userId], references: [id])
-  biller Billers @relation(fields: [billerId], references: [id])
+
+  transactionType LedgerTransactionType
+
+  direction LedgerDirection
+
+  amount Int
+  
+  createdAt DateTime @default(now())  
+
+  p2pTransferLedger Int?
+  p2pTransfer P2PTransfer? @relation(fields: [p2pTransferLedger], references: [id])
+
+  onRampTxLedger Int?
+  onRampTx OnRampTx? @relation(fields: [onRampTxLedger], references: [id])
 }
 
 // Enums for better type safety
@@ -112,20 +132,21 @@ enum OnRampStatus {
   Failed
 }
 
-enum BillersCategory {
-  Electricity
-  Recharge
-  Water
+enum P2PTransferStatus {
+  PENDING
+  COMPLETED    // Successfully transferred
+  FAILED       // Transfer failed
+  
 }
 
-enum BillStatus {
-  pending
-  paid
+enum LedgerTransactionType {
+  P2P_TRANSFER
+  ONRAMP
 }
 
-enum TransactionStatus {
-  success
-  failed
+enum LedgerDirection{
+  DEBIT 
+  CREDIT
 }
 
 // Run migration

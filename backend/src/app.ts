@@ -98,7 +98,7 @@ app.listen(appConfig.port, ()=>{
 
 
 
-app.post('/p2ptransfer', p2p.walletTransfer)
+app.post('/p2ptransfer',AuthMiddleware.authenticateUser, p2p.walletTransfer)
 
 // app.post('/dbupdate', async (req, res) => {
 //   const {userId, token, amount} = req.body.paymentInformation

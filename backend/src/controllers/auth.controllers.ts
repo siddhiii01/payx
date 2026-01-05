@@ -107,6 +107,7 @@ export class AuthController {
                     phoneNumber,
                     name,
                     password: hashedPassword, // Store hashed password
+                    createdAt: new Date(),
                     balances: {
                         create: {
                             amount: 0,
