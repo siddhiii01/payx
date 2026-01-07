@@ -5,9 +5,10 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Signup } from './components/auth/Signup';
 import { Login } from './components/auth/Login';
 import { AddMoneyToWallet } from './components/AddMoneyToWallet';
-import { P2P } from './components/P2PTransfer/P2P';
+import { P2PTransfer } from './components/P2PTransfer/P2PTransfer';
 import { Dashboard } from './components/Dashboard';
-import { Home } from './components/Home';
+import { Home } from './components/Home/Home';
+import { P2PStatus } from './components/P2PTransfer/P2PStatus';
 
 const router = createBrowserRouter([
   {
@@ -39,7 +40,10 @@ const router = createBrowserRouter([
     element: <AddMoneyToWallet/>
   },{
     path: '/p2ptransfer',
-    element: <P2P/>
+    element: <P2PTransfer/>
+  }, {
+    path: '/p2pstatus',
+    element: <P2PStatus />
   }
 
 ])

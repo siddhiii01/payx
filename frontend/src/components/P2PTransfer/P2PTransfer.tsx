@@ -6,6 +6,7 @@ import { useState, type JSX } from 'react';
 import { P2PHeader } from "./P2PHeader";
 import { BalanceCard } from "./BalanceCard";
 import { Send } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 
 const paymentSchema = z.object({
@@ -22,7 +23,7 @@ const paymentSchema = z.object({
 
 type Payment = z.infer<typeof paymentSchema>
 
-export const P2P= ():JSX.Element => {
+export const P2PTransfer= ():JSX.Element => {
     const {
         register,
         handleSubmit,
@@ -31,6 +32,7 @@ export const P2P= ():JSX.Element => {
     } = useForm<Payment>({resolver: zodResolver(paymentSchema)});
 
     const [serverError, setServerError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     const onSubmit = async (data: Payment) => {
         setServerError(null) //always clear the error first 
@@ -39,6 +41,7 @@ export const P2P= ():JSX.Element => {
         try{
             const response = await api.post('/p2ptransfer', data);
             console.log("Payment successful:", response.data);
+            navigate('/dasbhoard');
         } catch(error:any){
             if (!error.response) {
                 setServerError("Server is unreachable. Please try again later.");

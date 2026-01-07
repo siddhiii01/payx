@@ -1,6 +1,6 @@
 import { useEffect, useState, type JSX } from "react";
 import { api } from "../../utils/axios";
-import {IndianRupee} from "lucide-react";
+import {BadgeIndianRupeeIcon, IndianRupee, IndianRupeeIcon} from "lucide-react";
 
 
 type GetBalanceResponse = {
@@ -64,8 +64,8 @@ export const BalanceCard = (): JSX.Element => {
             {/* Right Side */}
             <div className="text-right">
                 <p className="text-[11px] font-medium text-slate-500">Balance</p>
-                <p className="flex items-center justify-end gap-0.01 text-[15px] font-bold text-slate-900 tracking-tight">
-                    <IndianRupee size={11} strokeWidth={4} />
+                <p className="flex items-center justify-end  text-[15px] font-bold text-slate-900 tracking-tight">
+                    <IndianRupeeIcon size={11} strokeWidth={4} />
                     <span>{balance.amount.toLocaleString("en-IN")}</span>
                 </p>
             </div>

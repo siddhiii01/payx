@@ -1,14 +1,19 @@
 import { prisma } from "@db/prisma.js";
 import type {Request, Response} from "express";
-import { send } from "node:process";
 import z from "zod";
-import { Merge } from '../generated/prisma/internal/prismaNamespace';
-import { log } from "node:console";
 
 const paymentSchema = z.object({
     amount: z.number().min(1).max(10000),
     phoneNumber: z.string().trim()
 });
+
+type P2PTransferResponse ={
+    transactionId: number,
+    status: "Completed",
+    amount: number,
+    recevierphoneNumber: string,
+    typeofTransfer: string
+}
 
 export class p2p {
     static walletTransfer = async (req: Request, res: Response) => {
@@ -141,8 +146,21 @@ export class p2p {
                         status:  "COMPLETED"
                     }
                 });
-            })
-            return res.json({ message: "Transfer successful" });
+
+                return {
+                    transactionId: p2pTransfer.id,
+                    status: "COMPLETED",
+                    amount,
+                    receiverphoneNumber : receiver.phoneNumber,
+                    typeofTransfer: "P2P"
+                
+                }
+            });
+            return res.status(200).json({
+                message: "Transfer successful",
+                data: p2pTransfer
+            });
+            
         } catch(error: any){
             console.error("P2P Transfer Error:", error);
 
