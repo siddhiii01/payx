@@ -8,7 +8,7 @@ import { AddMoneyToWallet } from './components/AddMoneyToWallet';
 import { P2PTransfer } from './components/P2PTransfer/P2PTransfer';
 import { Dashboard } from './components/Dashboard';
 import { Home } from './components/Home/Home';
-import { P2PStatus } from './components/P2PTransfer/P2PStatus';
+
 
 const router = createBrowserRouter([
   {
@@ -41,11 +41,7 @@ const router = createBrowserRouter([
   },{
     path: '/p2ptransfer',
     element: <P2PTransfer/>
-  }, {
-    path: '/p2pstatus',
-    element: <P2PStatus />
-  }
-
+  }, 
 ])
 
 createRoot(document.getElementById('root')!).render(
