@@ -12,6 +12,7 @@ import { onramptx } from "@controllers/onramp.controller.js";
 import { p2p } from "@controllers/p2p.controller.js";
 import { Webhook } from "@controllers/webhook.handler.controller.js";
 import { getBalance } from "@controllers/getBalance.js";
+import { Dashboard } from "@controllers/dashboard.controllers.js";
 
 const app = express();
 
@@ -103,7 +104,7 @@ app.post('/p2ptransfer',AuthMiddleware.authenticateUser, p2p.walletTransfer);
 
 app.get('/getBalance',AuthMiddleware.authenticateUser, getBalance)
 
-
+app.get('/dashboard', AuthMiddleware.authenticateUser, Dashboard.getUserName)
 // app.post('/dbupdate', async (req, res) => {
 //   const {userId, token, amount} = req.body.paymentInformation
 //   console.log("dbupdate", userId, token, amount)
