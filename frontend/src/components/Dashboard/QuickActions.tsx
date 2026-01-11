@@ -15,7 +15,7 @@ export const QuickActions = (): JSX.Element => {
       <div className="flex flex-col">
         {/* Standardized Action Rows */}
         <Link
-          to={"/addmoneytowallet"}
+          to={"/addtowallet"}
           className="flex items-center justify-between px-4 py-4 hover:bg-gray-50 transition border-b border-gray-100 group"
         >
           <div className="flex items-center gap-4">

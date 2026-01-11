@@ -6,7 +6,7 @@ import z from "zod";
 const PROVIDERS = ["HDFC", "AXIS", "SBI"] as const;
 
 const moneySchema = z.object({
-    amount : z.number().min(1).max(10000),
+    amount : z.number().min(1).max(20000,"Amount cannot exceed ₹20,000"),
     provider: z.enum(PROVIDERS),
 });
 
@@ -19,9 +19,9 @@ export const onramptx = async (req: Request, res: Response) => {
     const {amount, provider} = parsed.data; //Amount:  undefined
     //console.log("Amount: ", amount)
 
-    if(amount > 10000) { // ₹10,000 in paise
+    if(amount > 20000) { // ₹10,000 in paise
     return res.status(400).json({
-        message: "Amount cannot exceed ₹10,000"
+        message: "Amount cannot exceed ₹20,000"
     });
 }
 

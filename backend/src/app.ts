@@ -83,7 +83,7 @@ app.get('/logout',AuthMiddleware.authenticateUser, AuthController.logout, (req, 
 
 //add money to wallet -> recieve a request from frontend
 
-app.post('/addmoneytowallet',AuthMiddleware.authenticateUser, onramptx);
+app.post('/addtowallet',AuthMiddleware.authenticateUser, onramptx);
 
 
 

@@ -8,6 +8,7 @@ import { AddMoneyToWallet } from './components/AddMoneyToWallet';
 import { P2PTransfer } from './components/P2PTransfer/P2PTransfer';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { Home } from './components/Home/Home';
+import {Toaster} from "react-hot-toast"
 
 
 const router = createBrowserRouter([
@@ -47,5 +48,6 @@ const router = createBrowserRouter([
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <RouterProvider router={router} />
+    <Toaster position='top-right' toastOptions={{duration:3000}}/>
   </StrictMode>,
 )
