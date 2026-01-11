@@ -2,14 +2,15 @@ import {useForm} from "react-hook-form";
 import { api } from "../utils/axios";
 import z from 'zod';
 import { zodResolver } from "@hookform/resolvers/zod";
-import {useState, type JSX} from "react";
-import {toast} from "react-hot-toast"
-
+import type {JSX} from "react";
+import {toast} from "react-hot-toast";
 
 const PROVIDERS = ["HDFC", "AXIS", "SBI"] as const;
 
 const moneySchema = z.object({
-    amount : z.number().min(1, "Amount must be at least Rs.1").max(20000, "Amount cannot exceed 20,000rs."),
+    amount : z.number()
+            .min(1, "Amount must be at least Rs.1")
+            .max(20000, "Amount cannot exceed 20,000rs."),
     provider: z.enum(PROVIDERS),
 });
 
