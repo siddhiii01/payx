@@ -22,7 +22,7 @@ export const Login = (): JSX.Element => {
         try{
             //console.log("Data: ", data)
             const response = await api.post(`/login`, data);
-            console.log("Login successful:", response.data);
+            console.log("Login successful:");
             navigate('/dashboard');
 
         } catch(error: unknown){

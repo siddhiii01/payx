@@ -1,6 +1,7 @@
 import { prisma } from "@db/prisma.js";
 import type {Request, Response} from "express";
 import z from "zod";
+import { TransactionIntent } from '../utils/transactionIntent';
 
 const paymentSchema = z.object({
     amount: z.number().min(1).max(10000),
@@ -38,7 +39,7 @@ export class p2p {
         // }
         let p2pTransfer;
         try {
-
+             
             p2pTransfer  = await prisma.$transaction( async (tx) => {
                 console.log("Transaction started");
                 //return res.json({message: "Transaction executed"});
@@ -82,79 +83,80 @@ export class p2p {
                     throw new Error("Cannot send money to yourself");
                 }
 
+                TransactionIntent.createTransactionIntent(senderId, receiver.id, amount);
                 //creating p2p transfer -> pending state
-                const p2pTransfer  =await tx.p2PTransfer.create({
-                    data: {
-                        senderId: sender.id,
-                        receiverId: receiver.id,
-                        amount,
-                        status: "PENDING"
-                    }
-                });
-                console.log("p2p", p2pTransfer);
+                // const p2pTransfer  =await tx.p2PTransfer.create({
+                //     data: {
+                //         senderId: sender.id,
+                //         receiverId: receiver.id,
+                //         amount,
+                //         status: "PENDING"
+                //     }
+                // });
+                // console.log("p2p", p2pTransfer);
             
                 //updating balances of both : sender and receiver
                 //locked send amt
-                await tx.balance.update({
-                    where: {userId: senderId}, 
-                    data: {
-                        amount: {decrement: amount},
-                        locked: {increment: amount} //race conditions
-                    },
-                });
-                await tx.balance.update({
-                    where: {userId: receiver.id},
-                    data: {amount: {increment: amount}}
-                });
-                //unlock sender locked amt
-                await tx.balance.update({
-                    where: {userId: senderId},
-                    data: {
-                        locked: {decrement: amount}
-                    }
-                })
+                // await tx.balance.update({
+                //     where: {userId: senderId}, 
+                //     data: {
+                //         amount: {decrement: amount},
+                //         locked: {increment: amount} //race conditions
+                //     },
+                // });
+                // await tx.balance.update({
+                //     where: {userId: receiver.id},
+                //     data: {amount: {increment: amount}}
+                // });
+                // //unlock sender locked amt
+                // await tx.balance.update({
+                //     where: {userId: senderId},
+                //     data: {
+                //         locked: {decrement: amount}
+                //     }
+                // })
 
-                //creating ledger entry
-                const ledger = await tx.transactionLedger.createMany({
-                    data: [
-                        //sneder
-                        {
-                            userId: sender.id,
-                            transactionType: "P2P_TRANSFER",
-                            direction: "DEBIT",
-                            amount,
-                            p2pTransferLedger: p2pTransfer.id
+                // //creating ledger entry
+                // const ledger = await tx.transactionLedger.createMany({
+                //     data: [
+                //         //sneder
+                //         {
+                //             userId: sender.id,
+                //             transactionType: "P2P_TRANSFER",
+                //             direction: "DEBIT",
+                //             amount,
+                //             p2pTransferLedger: p2pTransfer.id
 
-                        }, 
-                        //receiver
-                        {
-                            userId: receiver.id,
-                            transactionType: "P2P_TRANSFER",
-                            direction: "CREDIT",
-                            amount,
-                            p2pTransferLedger: p2pTransfer.id
-                        }
-                    ]
-                });
+                //         }, 
+                //         //receiver
+                //         {
+                //             userId: receiver.id,
+                //             transactionType: "P2P_TRANSFER",
+                //             direction: "CREDIT",
+                //             amount,
+                //             p2pTransferLedger: p2pTransfer.id
+                //         }
+                //     ]
+                // });
 
-                console.log("Ledger Enteries: ", ledger);
+                // console.log("Ledger Enteries: ", ledger);
 
-                //marking transfer completed
-                await tx.p2PTransfer.update({
-                    where: {id: p2pTransfer.id},
-                    data: {
-                        status:  "COMPLETED"
-                    }
-                });
+                // //marking transfer completed
+                // await tx.p2PTransfer.update({
+                //     where: {id: p2pTransfer.id},
+                //     data: {
+                //         status:  "COMPLETED"
+                //     }
+                // });
 
-                return {
-                    transactionId: p2pTransfer.id,
-                    status: "COMPLETED",
-                    amount,
-                    receiverphoneNumber : receiver.phoneNumber,
-                    typeofTransfer: "P2P"
+                // return {
+                //     transactionId: p2pTransfer.id,
+                //     status: "COMPLETED",
+                //     amount,
+                //     receiverphoneNumber : receiver.phoneNumber,
+                //     typeofTransfer: "P2P"
                 
-                }
+                // }
             });
             return res.status(200).json({
                 message: "Transfer successful",
