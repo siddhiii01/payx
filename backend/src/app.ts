@@ -13,14 +13,18 @@ import { p2p } from "@controllers/p2p.controller.js";
 import { Webhook } from "@controllers/webhook.handler.controller.js";
 import { getBalance } from "@controllers/getBalance.js";
 import { Dashboard } from "@controllers/dashboard.controllers.js";
+import { errorHandler } from "@utils/errorHandler.js";
 
 const app = express();
 
 
+app.use(errorHandler)
 app.use(cors({
   origin: "http://localhost:5173",  
   credentials: true,   //allow browser to send cookies when  making req from this origin -> cookies allowed
 }));
+
+
 
 app.use(cookieParser());
 // app.use(cors({
