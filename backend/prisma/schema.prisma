@@ -17,11 +17,17 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
+
   email     String   @unique
-  name String
-  password  String
   phoneNumber String @unique
+  name String
+
+  passwordHash  String 
+
+  tokenVersion Int @default(0)
+  
   refreshToken String? // Optional, no uniqueness (multiple nulls allowed)
+
   createdAt DateTime @default(now()) //stores exact time when user was created ; set once ; never set automatically
   updatedAt DateTime @updatedAt //store the lastes time when it was updated; automatically update by prisma
   
