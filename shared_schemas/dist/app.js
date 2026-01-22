@@ -15,6 +15,8 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./schemas/auth.schemas"), exports);
+__exportStar(require("./schemas/p2p.schemas"), exports);
+__exportStar(require("./schemas/wallet.schemas"), exports);
 // npm run build
 // npm version patch
 // npm publish

@@ -1,14 +1,11 @@
 import type { JSX } from "react";
-import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
-export const P2PHeader = (): JSX.Element => {
-    const navigate = useNavigate();
+interface P2PHeaderProps {
+  onBack: () => void;
+}
 
-    const handleClickBack = () => {
-        navigate(-1);
-    }
-
+export const P2PHeader = ({ onBack }: P2PHeaderProps): JSX.Element => {
     return (
         <header className="w-full border-b border-gray-100 bg-white py-4">
             {/* Centering Container */}
@@ -17,7 +14,7 @@ export const P2PHeader = (): JSX.Element => {
                 {/* Back Navigation Button */}
                 <button
                     type="button"
-                    onClick={handleClickBack}
+                    onClick={onBack}
                     aria-label="Go Back"
                     className="rounded-full p-2 text-slate-900 transition-colors hover:bg-slate-50"
                 >

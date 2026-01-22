@@ -5,7 +5,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Signup } from './components/auth/Signup';
 import { Login } from './components/auth/Login';
 import { AddMoneyToWallet } from './components/AddMoneyToWallet';
-import { P2PTransfer } from './components/P2PTransfer/P2PTransfer';
+import { P2PTransfer } from './components/p2pTransfer/P2PTransfer';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { Home } from './components/Home/Home';
 import {Toaster} from "react-hot-toast"

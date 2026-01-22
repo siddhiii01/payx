@@ -4,6 +4,7 @@ import z from "zod";
 import { TransactionIntent } from '../utils/transactionIntent.js';
 import { asyncHanlder } from '../utils/asyncHandler.js';
 import { AppError } from "@utils/AppError.js";
+import { evaluteIntent } from "@utils/decision_engine.util.js";
 
 
 const paymentSchema = z.object({
@@ -78,10 +79,8 @@ export class p2p {
             status: intent.status,
             message: "Transacrion pending approval"
         });
+
+        evaluteIntent(intent.id);
        
     })
 }
-
-
-// try/catch -> HTTP level security
-// $transaction -> DB level Security 

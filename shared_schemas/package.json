@@ -1,6 +1,6 @@
 {
   "name": "shared_schemas",
-  "version": "1.0.7",
+  "version": "2.0.1",
   "main": "dist/app.js",
   "scripts": {
     "build": "tsc",

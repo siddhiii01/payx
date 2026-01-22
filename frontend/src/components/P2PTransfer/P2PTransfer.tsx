@@ -1,27 +1,14 @@
 import {useForm} from "react-hook-form";
-import { api } from "../../utils/axios";
-import z from 'zod';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, type JSX } from 'react';
-import { P2PHeader } from "./P2PHeader";
-import { BalanceCard } from "./BalanceCard";
 import { Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { paymentSchema, type Payment } from "shared_schemas";
+import { sendP2PPayment } from './p2pTransfer.api';
+import { BalanceCard } from "../BalanceCard";
+import { P2PHeader } from "./P2PHeader";
+import { useBalance } from "../hooks/useBalance";
 
-
-const paymentSchema = z.object({
-    amount: z
-        .number()
-        .min(1, "Amount must be at least Rs. 1")
-        .max(10_000, "You can send a maximum of Rs. 10,000 at once"),
-    phoneNumber: z
-        .string()
-        .trim()
-        .min(1, "Phone number is required")
-        .regex(/^[6-9]\d{9}$/, "Please enter a valid 10-digit phone number")
-});
-
-type Payment = z.infer<typeof paymentSchema>
 
 export const P2PTransfer= ():JSX.Element => {
     const {
@@ -33,14 +20,12 @@ export const P2PTransfer= ():JSX.Element => {
 
     const [serverError, setServerError] = useState<string | null>(null);
     const navigate = useNavigate();
+    const { balance} = useBalance();
 
     const onSubmit = async (data: Payment) => {
         setServerError(null) //always clear the error first 
-
-
         try{
-            const response = await api.post('/p2ptransfer', data);
-            console.log("Payment successful:", response.data);
+            await sendP2PPayment(data)
             navigate('/dasbhoard');
         } catch(error:any){
             if (!error.response) {
@@ -56,11 +41,16 @@ export const P2PTransfer= ():JSX.Element => {
 
     return (
         <div className="min-h-screen bg-[#fafafa]">
-            <P2PHeader />
+            <P2PHeader onBack={() => navigate(-1)}/>
 
             <main className="mx-auto mt-6 max-w-xl px-4">
                 {/* Balance Card */}
-                <BalanceCard />
+                {balance && (
+                    <BalanceCard
+                        email={balance.email}
+                        amount={balance.amount}
+                    />
+                )}
 
                 {/* Transfer Form Card */}
                 <div className="rounded-l border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md cursor-default">
