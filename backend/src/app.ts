@@ -17,6 +17,7 @@ import { errorHandler } from "@utils/errorHandler.js";
 import authRoutes from "@route/auth.route.js";
 import balanceRoutes from "@route/balance.route.js";
 import { TransactionController } from "@controllers/transaction.controller.js";
+import { ChartController } from "@controllers/chart.controller.js";
 
 const app = express();
 
@@ -93,6 +94,7 @@ app.post('/addtowallet',AuthMiddleware.authenticateUser, onramptx);
 
 
 
+app.get("/api/chart/volume", AuthMiddleware.authenticateUser, ChartController.getTransactionVolume);
 // This route should not require authentication (like JWT or cookies).
 //  Why? Because the bank (your dummy bank server) is calling it from the 
 //  server-side, not from a user's browser. It doesn't have user cookies.

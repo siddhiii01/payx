@@ -3,6 +3,7 @@ import { Navbar } from "../Layout/Navbar";
 import { BalanceData } from "./BalanceData";
 import { QuickActions } from "./QuickActions";
 import { Transactions } from "./Transactions";
+import { TransactionVolumeChart } from "./TransactionVolumeChart";
 
 export const Dashboard = (): JSX.Element => {
   return (
@@ -20,6 +21,12 @@ export const Dashboard = (): JSX.Element => {
             <QuickActions />
           </div>
         </div>
+
+
+        <div className="mb-5">
+            <TransactionVolumeChart />
+        </div>
+        
 
         {/* Transactions section — same container, same width */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
