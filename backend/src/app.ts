@@ -16,6 +16,7 @@ import { Dashboard } from "@controllers/dashboard.controllers.js";
 import { errorHandler } from "@utils/errorHandler.js";
 import authRoutes from "@route/auth.route.js";
 import balanceRoutes from "@route/balance.route.js";
+import { TransactionController } from "@controllers/transaction.controller.js";
 
 const app = express();
 
@@ -103,6 +104,7 @@ app.listen(appConfig.port, ()=>{
 });
 
 
+app.get("/api/transactions", AuthMiddleware.authenticateUser, TransactionController.getUserTransactions);
 
 
 //this create intent -> no longer transfer money

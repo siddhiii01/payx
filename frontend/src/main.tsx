@@ -10,6 +10,7 @@ import { Dashboard } from './components/Dashboard/Dashboard';
 import { Home } from './components/Home/Home';
 import {Toaster} from "react-hot-toast"
 import { PaymentStatus } from './components/PaymentStatus';
+import { Transactions } from './components/Dashboard/Transactions';
 
 
 const router = createBrowserRouter([
@@ -42,6 +43,9 @@ const router = createBrowserRouter([
   {
     path: "/payment-status",
     element: <PaymentStatus/>
+  }, {
+    path: '/transactions',
+    element: <Transactions />
   }
 ])
 
