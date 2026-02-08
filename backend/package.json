@@ -11,17 +11,16 @@
     "build": "prisma generate && tsc",
     "start": "node dist/app.js",
     "start:prod": "prisma migrate deploy && node dist/app.js",
-     "prisma:generate": "prisma generate",
+
+    "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:migrate:reset": "prisma migrate reset",
     "prisma:studio": "prisma studio",
-    "prisma:format": "prisma format",
+
     
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate"
     
-    "test:db": "tsx src/test-db.ts",
-    "test:schema": "tsx src/test-schema.ts"
+  
   },
   "ts-node": {
     "esm": true,
