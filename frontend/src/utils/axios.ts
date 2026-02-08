@@ -1,9 +1,10 @@
 import axios from 'axios';
-
 //custom Axios instance with a preconfigured base URL so every request 
 // made with api automatically points to backend
+
+const API_URL = import.meta.env.VITE_API_URL;
 export const api = axios.create({
-    baseURL : import.meta.env.VITE_API_URL,
+    baseURL : API_URL,
     withCredentials: true //allow browser to attach cookies with req
 });
 
