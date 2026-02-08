@@ -1,8 +1,11 @@
+import dotenv from "dotenv";
 import express from "express";
 import crypto from "crypto";
 import axios from "axios";
 import path from "path";
 import { fileURLToPath } from "url";
+
+dotenv.config();
 
 const app = express();
 app.use(express.json());
@@ -33,7 +36,7 @@ app.post('/create-payment',(req, res) => {
     // 2. Create the full payment URL (this is where the user will be redirected to approve
     //here the paymentUrl will first go to paytm then it will send to frontend
     //and the frontend will try to redirect the browser to that URL.
-    const paymentUrl = `http://localhost:3001/pay/${payment_token}`; //we need to create this here since this is the bank server this will show the Approval Page
+    const paymentUrl = `${process.env.BANK_BASE_URL}/pay/${payment_token}`; //we need to create this here since this is the bank server this will show the Approval Page
 
     // 3. Store in Map
     payments.set(payment_token, {
