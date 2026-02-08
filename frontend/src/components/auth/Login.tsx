@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginCredentials } from "shared_schemas";
 import { api } from "../../utils/axios";
 import { Link, useNavigate } from 'react-router-dom';
-import { useState, type JSX } from "react";
+import {  type JSX } from "react";
 import axios from "axios";
 import { ShieldCheckIcon, WalletIcon } from "lucide-react";
 import {toast} from "react-hot-toast";
@@ -21,7 +21,7 @@ export const Login = (): JSX.Element => {
       
         try{
             //console.log("Data: ", data)
-            const response = await api.post(`/api/auth/login`, data);
+            await api.post(`/api/auth/login`, data);
             toast.success("Login successful! Redirecting...")
             setTimeout(() => navigate('/dashboard'), 1500);
 

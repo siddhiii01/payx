@@ -49,7 +49,7 @@ api.interceptors.response.use(
                 console.log('🔄 Access token expired, attempting to refresh...');
                 
                 // Call refresh endpoint - IMPORTANT: matches your backend route
-                const response = await api.post("/refresh");
+                await api.post("/refresh");
                 
                 console.log('✅ Token refresh successful');
                 
