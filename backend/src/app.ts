@@ -25,9 +25,18 @@ const app = express();
 
 
 app.use(errorHandler)
+// Allow all Vercel domains
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",  
-  credentials: true,   //allow browser to send cookies when  making req from this origin -> cookies allowed
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    
+    if (origin.includes('vercel.app') || origin.includes('localhost')) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
 }));
 
 
