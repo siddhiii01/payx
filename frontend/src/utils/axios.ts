@@ -2,7 +2,7 @@ import axios from 'axios';
 //custom Axios instance with a preconfigured base URL so every request 
 // made with api automatically points to backend
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = "https://payx-backend.onrender.com";
 console.log("🌐 Axios Base URL:", API_URL); // Add this line
 export const api = axios.create({
     baseURL : API_URL,
