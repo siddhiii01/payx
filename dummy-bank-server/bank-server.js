@@ -5,6 +5,8 @@ import axios from "axios";
 import path from "path";
 import { fileURLToPath } from "url";
 
+const BANK_BASE = process.env.BANK_BASE_URL || 'https://pyx-dummy-bank-server.onrender.com';
+
 dotenv.config();
 
 const app = express();
@@ -36,7 +38,7 @@ app.post('/create-payment',(req, res) => {
     // 2. Create the full payment URL (this is where the user will be redirected to approve
     //here the paymentUrl will first go to paytm then it will send to frontend
     //and the frontend will try to redirect the browser to that URL.
-    const paymentUrl = `${process.env.BANK_BASE_URL}/pay/${payment_token}`; //we need to create this here since this is the bank server this will show the Approval Page
+    const paymentUrl = `${process.env.BANK_BASE}/pay/${payment_token}`; //we need to create this here since this is the bank server this will show the Approval Page
 
     // 3. Store in Map
     payments.set(payment_token, {

@@ -43,7 +43,7 @@
             amount: amountInPaise, // paise to bank 
             userId,
             provider,
-            webhookUrl: `${WEBHOOK_BASE}/webhook`, // Server-to-server notification
+            webhookUrl: `${WEBHOOK_BASE}`, // Server-to-server notification
             userReturnUrl: `${FRONTEND_BASE}/payment-status`, // NEW: User redirect after approve/decline
             }, {
         timeout: 15000,  // ← good safety: 15 seconds max
