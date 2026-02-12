@@ -1,24 +1,30 @@
 import { registerSchema, loginSchema } from "shared_schemas";
 import type {Request, Response} from "express";
 import {prisma} from "@db/prisma.js"
-import jwt from "jsonwebtoken";
-import { authConfig } from "@config/auth.config.js";
-import {appConfig} from "@config/app.config.js"
-import { generateAccessToken } from "@utils/jwtToken.js";
 import { comparePassword, hashPassword } from "@utils/password.utils.js";
-import { asyncHanlder } from '../utils/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import { AppError } from "@utils/AppError.js";
-import { issueToken } from "@utils/issueToken.util.js";
-import { accessCookieOptions, refreshCookieOptions } from "@utils/cookie.util.js";
+import { issueTokenPair } from "@utils/issueToken.util.js";
+import { accessCookieOptions, refreshCookieOptions, clearCookieOptions } from "@utils/cookie.util.js";
+import z from "zod";
 
 export class AuthController {
-    static login = asyncHanlder(async (req: Request, res: Response) => {
+
+    // LOGIN - Authenticate existing user
+    //  POST /api/auth/login
+    static login = asyncHandler(async (req: Request, res: Response) => {
+        //validate input
         const validation = loginSchema.safeParse(req.body);
         if(!validation.success){
-            throw new AppError("Zod Validation Failed", 400, validation.error.flatten().fieldErrors)
+            throw new AppError(
+                "Zod Validation Failed",
+                400,
+                z.prettifyError(validation.error)    
+            );
         }
 
         const {email, password} = validation.data;
+
         //find user & select only necessary field
         const user = await prisma.user.findUnique({
             where: {email},
@@ -32,7 +38,6 @@ export class AuthController {
             }
         });
 
-        console.log("User Token Version: ", user)
         if (!user) {
             throw new AppError("Invalid credentials", 401);
         } 
@@ -43,20 +48,18 @@ export class AuthController {
             throw new AppError("Invalid credentials", 401);
         }
 
-        //Generate tokens 
-        const {accessToken, refreshToken}=  issueToken({ 
+        //Generate tokens WITH current tokenVersion
+        const { accessToken, refreshToken } = await issueTokenPair({
             userId: user.id,
-            tokenVersion: user.tokenVersion
+            tokenVersion: user.tokenVersion,
+            email: user.email,
         });
 
-        await prisma.user.update({
-            where: {id: user.id},
-            data: {refreshToken}
-        });
-
+        //Set Cookies
         res.cookie("accessToken", accessToken, accessCookieOptions);
         res.cookie("refreshToken", refreshToken, refreshCookieOptions);
         
+        //Send response 
         return res.status(200).json({
             success: true,
             message: "Login successful",
@@ -69,27 +72,43 @@ export class AuthController {
         });
     });
 
-    static register = asyncHanlder(async (req: Request, res: Response) => {
-        //Validate Input using Zod
+    //Register - Create a new user
+    //Post /api/auth/signup
+    static register = asyncHandler(async (req: Request, res: Response) => {
+        //Validate Input with Zod
         let  validation= registerSchema.safeParse(req.body);
         if (!validation.success) {
-            throw new AppError("Zod Validation Failed", 400, validation.error.flatten().fieldErrors);
+            throw new AppError(
+                "Zod Validation Failed",
+                400,
+                z.prettifyError(validation.error)   
+            );
         }
+
         const {name, email, password, phoneNumber} = validation.data;
         
-            //check if the user already exist in db thru email 
-            const existingUser = await prisma.user.findFirst({ 
-                where: { OR: [{ email }, { phoneNumber }] } 
-            });
-            // user exists -> LOGIN FLOW
-            if(existingUser){
-                throw new AppError("Account already exists. Please login instead.", 409);
+        //check if the user already exist in db thru email 
+        const existingUser = await prisma.user.findFirst({ 
+            where: { 
+                OR: [
+                    { email },
+                    { phoneNumber }
+                ] 
+            } 
+        });
+
+        // user exists
+        if (existingUser) {
+            if (existingUser.email === email) {
+                throw new AppError("Email already registered", 409);
             }
+            throw new AppError("Phone number already registered", 409);
+        }
 
-            // user not found -> SIGNUP FLOW
-            const hashedPassword = await hashPassword(password);
+        // hash password
+        const hashedPassword = await hashPassword(password);
 
-        //Create a new user & default balance
+        //Create a new user with  default balance
         const newUser = await prisma.user.create({
             data: {
                 email, 
@@ -97,30 +116,35 @@ export class AuthController {
                 name,
                 passwordHash: hashedPassword, // Store hashed password
                 createdAt: new Date(),
-                tokenVersion: 0,
+                tokenVersion: 0, // Initialize version
                 balances: {
                     create: {
                         amount: 0,
                         locked: 0
                     }
                 }
+            },
+            select: {
+                id: true,
+                email: true,
+                phoneNumber: true,
+                name: true,
+                tokenVersion: true,
             }
         });
         
         //Generate tokens 
-        const {accessToken, refreshToken}=  issueToken({ 
+        const {accessToken, refreshToken}=  await issueTokenPair({ 
             userId: newUser.id,
-            tokenVersion: newUser.tokenVersion
+            tokenVersion: newUser.tokenVersion,
+            email: newUser.email,
         });
 
-        await prisma.user.update({
-            where: {id: newUser.id},
-            data: {refreshToken}
-        });
-
+        //Set Cookies
         res.cookie("accessToken", accessToken, accessCookieOptions);
         res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
+        //Send response
         return res.status(201).json({
             success: true,
             message: "User created successfully",
@@ -134,73 +158,34 @@ export class AuthController {
         
     });
 
-    static logout = async (req: Request, res: Response) => {
-    //    const userId = (req as any).user?.userId;  //nai samjha
-        try{
-            const userId = (req as any).userId;
+    // LOGOUT - Invalidate user session
+    // POST /api/auth/logout
+    static logout = asyncHandler(async (req: Request, res: Response) => {
+        // Get userId from authenticated request
+        const userId = (req as any).userId;
 
-            if(userId){
-                await prisma.user.update({where : {id: userId}, data: {refreshToken: null}})
+        if (!userId) {
+            throw new AppError("User not authenticated", 401);
+        }
+
+        // Increment tokenVersion to invalidate ALL existing tokens
+        // Also clear refresh token from database
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                refreshToken: null,
+                tokenVersion: { increment: 1 },  // This is the KEY! 🔑
             }
-
-            res.clearCookie("accessToken")
-            res.clearCookie("refreshToken")
-
-            return res.json({
-                message: "logout successfully"
-            })
-        }catch(error){
-             console.error("Logout failed:", error);
-        }
-    }
-    
-    //acess token expires fast and refresh token last long -> from this function we will allow or not allow user to get new access token
-    static refreshToken = asyncHanlder(async (req: Request, res: Response) => {
-
-        //browser automatically sends cookies
-        const refreshToken = req.cookies.refreshToken;
-        if(!refreshToken){
-            throw new AppError("No refresh token provided", 401);
-        }
-        //verfiying refresh token
-        let decodedToken: any;
-        try{
-            decodedToken = jwt.verify(refreshToken, authConfig.refreshSecret);
-            console.log("Decoded Token: ", decodedToken)
-        } catch(error){
-            throw new AppError("Invalid or expired refresh token", 403);
-
-        }
-        const user = await prisma.user.findUnique({
-            where: { id: decodedToken.userId }
         });
 
-        if (
-            !user ||
-            user.refreshToken !== refreshToken ||
-            user.tokenVersion !== decodedToken.tokenVersion
-            ) {
-                res.clearCookie("refreshToken");
-                res.clearCookie("accessToken");
-                throw new AppError("Invalid refresh token", 403);
-        }
+        // Clear cookies
+        res.clearCookie("accessToken", clearCookieOptions);
+        res.clearCookie("refreshToken", clearCookieOptions);
 
-        //  generate new access token WITH tokenVersion
-        const newAccessToken = generateAccessToken({
-        userId: user.id,
-        tokenVersion: user.tokenVersion
+        return res.status(200).json({
+            success: true,
+            message: "Logout successful"
         });
-
-        //setting new access token cookie
-        res.cookie("accessToken", newAccessToken, {
-            httpOnly: true,
-            secure: appConfig.nodeEnv === "production",
-            sameSite: "strict",
-            maxAge: 15 * 60 * 1000,
-        });
-
-        return res.status(200).json({ message: "Token refreshed" });  
-    })
-
+    });
     
 }

@@ -2,7 +2,7 @@ import { prisma } from "@db/prisma.js";
 import type {Request, Response} from "express";
 import z from "zod";
 import { TransactionIntent } from '../utils/transactionIntent.js';
-import { asyncHanlder } from '../utils/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import { AppError } from "@utils/AppError.js";
 import { evaluateRisk} from "@utils/decision_engine.util.js";
 
@@ -14,7 +14,7 @@ const paymentSchema = z.object({
 
 export class p2p {
     //request to create a P2P transfer intent
-    static walletTransfer = asyncHanlder(async (req: Request, res: Response) => {
+    static walletTransfer = asyncHandler(async (req: Request, res: Response) => {
         //validating input request
         const parsed = paymentSchema.safeParse(req.body);
         if(!parsed.success){

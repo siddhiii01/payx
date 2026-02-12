@@ -1,10 +1,10 @@
 import { prisma } from "@db/prisma.js";
 import { AppError } from "@utils/AppError.js";
-import { asyncHanlder } from "@utils/asyncHandler.js";
+import { asyncHandler } from "@utils/asyncHandler.js";
 import type {Request, Response} from 'express';
 
 export class BalanceController {
-    static getBalance = asyncHanlder( async (req: Request, res: Response) => {
+    static getBalance = asyncHandler( async (req: Request, res: Response) => {
 
         const userId = (req as any).userId;
         if(!userId) throw new AppError("Unauthorized User", 401);

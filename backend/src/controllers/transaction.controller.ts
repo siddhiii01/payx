@@ -1,11 +1,11 @@
 import { prisma } from "@db/prisma.js";
 import { AppError } from "@utils/AppError.js";
-import { asyncHanlder } from "@utils/asyncHandler.js";
+import { asyncHandler } from "@utils/asyncHandler.js";
 import type { Request, Response } from "express";
 
 export class TransactionController {
 
-    static getUserTransactions = asyncHanlder(async (req: Request, res: Response) => {
+    static getUserTransactions = asyncHandler(async (req: Request, res: Response) => {
         const userId = (req as any).userId;
 
         if (!userId) {
@@ -96,7 +96,7 @@ export class TransactionController {
    * Returns the most recent transaction for the authenticated user
    * Used by /payment-status to show success/failure confirmation
    */
-  static getLatestUserTransaction = asyncHanlder(async (req: Request, res: Response) => {
+  static getLatestUserTransaction = asyncHandler(async (req: Request, res: Response) => {
     const userId = (req as any).userId;
     if (!userId) {
       throw new AppError("Unauthorized", 401);

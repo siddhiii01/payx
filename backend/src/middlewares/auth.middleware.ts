@@ -1,41 +1,92 @@
+// middlewares/auth.middleware.ts
 import { authConfig } from "@config/auth.config.js";
-import type {Request, Response, NextFunction} from "express"
-import jwt from "jsonwebtoken";
+import type { Request, Response, NextFunction } from "express";
+import { verifyAccessToken } from "@utils/jwt.utils.js";
+import { prisma } from "@db/prisma.js";
+import { AppError } from "@utils/AppError.js";
 
-
-export interface DecodedToken {
-    userId: number
+// Extend Express Request type
+declare global {
+    namespace Express {
+        interface Request {
+            userId?: number;
+            user?: {
+                userId: number;
+                email: string;
+                tokenVersion: number;
+            };
+        }
+    }
 }
 
 export class AuthMiddleware {
-    static authenticateUser =  (req: Request, res: Response, next: NextFunction) => {
-        console.log('Refresh endpoint called');
-  console.log('Received refresh token:', req.cookies.refreshToken ? 'YES' : 'NO');
-        //now server has sended the cookies in res.cookies in login route
-        //from client to access the cookie uses req.cookies
-        const token = req.cookies.accessToken; //getting token from user 
-        console.log("Access token from req.cookies.accessToken: ", token)
+    /**
+     * Authenticate User Middleware
+     * Verifies access token and attaches user to request
+     */
+    static authenticateUser = async (
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ) => {
+        try {
+            // 1. Extract token from cookie
+            const token = req.cookies.accessToken;
 
-        if(!token){
-             return res.status(401).json({
-                message: "User is not authorised"
-            })
-        }
+            if (!token) {
+                throw new AppError("Access token required", 401);
+            }
 
-        try{
+            // 2. Verify token signature and expiry
+            let decoded;
+            try {
+                decoded = verifyAccessToken(token);
+            } catch (error: any) {
+                // Token expired or invalid
+                throw new AppError(error.message || "Invalid token", 401);
+            }
 
-            //first verify is the token recieved from client is right and not tampered with
-            const decodedToken = jwt.verify(token, authConfig.secret) as DecodedToken;
-            console.log("Decoded Token: ", decodedToken);
+            // 3. Check if user still exists and get current tokenVersion
+            const user = await prisma.user.findUnique({
+                where: { id: decoded.userId },
+                select: {
+                    id: true,
+                    email: true,
+                    tokenVersion: true,
+                }
+            });
 
-            //now attaching userId on req obj so server know about the user 
-            (req as any).userId = decodedToken.userId;
+            if (!user) {
+                throw new AppError("User not found", 401);
+            }
+
+            // 4. CRITICAL: Verify token version matches database
+            if (user.tokenVersion !== decoded.tokenVersion) {
+                throw new AppError("Token has been invalidated", 401);
+            }
+
+            // 5. Attach user to request object
+            req.userId = user.id;
+            req.user = {
+                userId: user.id,
+                email: user.email,
+                tokenVersion: user.tokenVersion,
+            };
+
             next();
-        } catch(error){
-             console.error("Authentication failed:", error);  
-             // Token expired or invalid → frontend will auto-refresh
-            return res.status(401).json({ message: "Unauthorized" });
-             
+
+        } catch (error) {
+            if (error instanceof AppError) {
+                return res.status(error.statusCode).json({
+                    success: false,
+                    message: error.message,
+                });
+            }
+
+            return res.status(401).json({
+                success: false,
+                message: "Authentication failed",
+            });
         }
-    }
+    };
 }

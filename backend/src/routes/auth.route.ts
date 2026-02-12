@@ -1,12 +1,14 @@
 import { Router } from "express";
 import { AuthController } from "@controllers/auth.controllers.js";
+import { AuthMiddleware } from "@middlewares/auth.middleware.js";
 
 const authRoutes = Router();
 
-//Signup Route
+//Public routes (no authentication required)
 authRoutes.post('/signup', AuthController.register);
-
-//Login Router
 authRoutes.post('/login', AuthController.login);
+
+//Protected routes (authentication required)
+authRoutes.post('/logout', AuthMiddleware.authenticateUser, AuthController.logout);
 
 export default authRoutes;

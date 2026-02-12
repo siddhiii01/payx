@@ -24,147 +24,98 @@ import onrampRoute from '@route/onramp.route.js';
 
 const app = express();
 
+//CORS Configuration
+const allowedOrigins = [
+    appConfig.frontendUrl,
+    'http://localhost:5173',
+    'http://localhost:3000',
+];
 
-app.use(errorHandler)
-// Allow all Vercel domains
 app.use(cors({
   origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
-    if (origin.includes('vercel.app') || origin.includes('localhost')) {
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     
     callback(new Error('Not allowed by CORS'));
   },
-  credentials: true,
+  credentials: true, //Allow Cookies
 }));
 
 
-
+//Body parsing & Cookies
 app.use(cookieParser());
-// app.use(cors({
-//   origin: 'http://localhost:5173'  // Vite default
-// }))
-
-
-app.use((req, res, next) => {
-    console.log("Incoming cookies:", req.cookies);
-    next();
-});
-
-//every incoming requesting that browser is sending is goes through this middleware before acutally hitting our route
-//This looks at header: Content-Type: application/json
 app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));
 
-//Logging Middleware
-// app.use((req: Request,res:Response, next: NextFunction) => {
-//     console.log("Incoming req: ");
-//     console.log(`req.headers: ${JSON.stringify(req.headers)}`)
-//     console.log(`req.body: ${JSON.stringify(req.body)}`);
-//     console.log(`req.url: ${req.originalUrl}`);
-//     next();
-// });
-
-
-async function testConnection(){
-  const isConnected = await connectDB();
-  if(!isConnected){
-    console.error("Failed to connected to db");
-    process.exit(1) //stop the whole server is db is not connected
-  }
+//Logging Middleware 
+if(appConfig.nodeEnv === 'development'){
+  app.use((req: Request,res:Response, next: NextFunction) => {
+    console.log(`${req.method} ${req.path}`);
+    console.log('Cookies:', req.cookies);
+    next();
+  });
 }
-testConnection();
+
+// async function testConnection(){
+//   const isConnected = await connectDB();
+//   if(!isConnected){
+//     console.error("Failed to connected to db");
+//     process.exit(1) //stop the whole server is db is not connected
+//   }
+// }
+// testConnection();
+
+
 
 //home route
+
 app.post('/', (req, res) => {
   const username = req.body
   res.send(`${username}`)
 })
 
+//AUth routes public
 app.use('/api/auth', authRoutes);
-app.use('/api', AuthMiddleware.authenticateUser, balanceRoutes)
-app.use('/api/addtowallet', onrampRoute)
 
-
-
-//refresh token
-app.post('/refresh',AuthController.refreshToken);
-
-//logout page
-app.get('/logout',AuthMiddleware.authenticateUser, AuthController.logout, (req, res) => {
-  console.log((req as any).user?.userId)
-});
-
-
-
-
-
-
-//add money to wallet -> recieve a request from frontend
-
-// app.post('/addtowallet',AuthMiddleware.authenticateUser, onramptx);
-
-
-
+//Protected Routes require Authentication
 app.get("/api/chart/volume", AuthMiddleware.authenticateUser, ChartController.getTransactionVolume);
-// This route should not require authentication (like JWT or cookies).
-//  Why? Because the bank (your dummy bank server) is calling it from the 
-//  server-side, not from a user's browser. It doesn't have user cookies.
-app.post('/webhook', Webhook.webhookhanlder)
-
-
-app.listen(appConfig.port, ()=>{
-  console.log("Server is running")
-});
-
-
 app.get("/api/transactions", AuthMiddleware.authenticateUser, TransactionController.getUserTransactions);
 app.get("/api/transaction/latest", AuthMiddleware.authenticateUser, TransactionController.getLatestUserTransaction);
+app.get('/dashboard', AuthMiddleware.authenticateUser, Dashboard.getUserName)
 
-
-//this create intent -> no longer transfer money
+//Wallet operations (protected)
+app.use('/api', balanceRoutes);
+app.use('/api', onrampRoute);
 app.post('/p2ptransfer',AuthMiddleware.authenticateUser, p2p.walletTransfer);
 
+//Webhook (public - called by external service)
+app.post('/webhook', Webhook.webhookhanlder);
 
 
-app.get('/dashboard', AuthMiddleware.authenticateUser, Dashboard.getUserName)
-// app.post('/dbupdate', async (req, res) => {
-//   const {userId, token, amount} = req.body.paymentInformation
-//   console.log("dbupdate", userId, token, amount)
-//   try {
-//         await prisma.$transaction([
-//             prisma.balance.updateMany({
-//                 where: {
-//                     userId: Number(userId)
-//                 },
-//                 data: {
-//                     amount: {
-//                         // You can also get this from your DB
-//                         increment: Number(amount)
-//                     }
-//                 }
-//             }),
-//             prisma.onRampTx.updateMany({
-//                 where: {
-//                     token: token
-//                 }, 
-//                 data: {
-//                     status: "Success",
-//                 }
-//             })
-//         ]);
+//Error Handling
+//404 handler
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Route not found',
+        path: req.path
+    });
+});
+app.use(errorHandler) //Global Error Handler
 
-//         res.json({
-//             message: "Captured"
-//         })
-//     } catch(e) {
-//         console.error(e);
-//         res.status(411).json({
-//             message: "Error while processing webhook"
-//         })
-//     }
-//   //res.send("This was from webhook hablder to paytm")
-//   // res.json({message: "This was from webhook hablder to paytm"})
-// })
+
+//Start Server
+app.listen(appConfig.port, ()=>{
+  console.log(`Server running on port ${appConfig.port}`);
+    console.log(`Environment: ${appConfig.nodeEnv}`);
+    console.log(`Frontend: ${appConfig.frontendUrl}`);
+});
+
+
+
+
 

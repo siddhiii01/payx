@@ -1,19 +1,37 @@
 import type { CookieOptions } from "express";
+import {appConfig} from "@config/app.config.js"
 
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = appConfig.nodeEnv === 'production';
 
+//Base cookie configuration
+const baseCookieOptions: CookieOptions = {
+    httpOnly: true, // Prevents JavaScript access (XSS protection)
+    secure: isProd, // Only HTTPS in production , only sent over HTTPS 
+    sameSite: isProd ? 'none' : 'lax', // CSRF protection
+    path: '/', // Available on all routes
+};
+
+//Access Token Cookie (short-lived)
 export const accessCookieOptions: CookieOptions = {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
-    maxAge: 15 * 60 * 1000, //15min
-    path: '/'
+    ...baseCookieOptions,
+    maxAge: 15 * 60 * 1000,  // 15 minutes in milliseconds
 }
 
+//Refresh Token Cookie (long-lived)
 export const refreshCookieOptions: CookieOptions = {
-    httpOnly: true,
+    ...baseCookieOptions,
+    maxAge: 0,  // Expire immediately
+}
+
+
+//Helper to clear cookies (for logout)
+export const clearCookieOptions: CookieOptions = {
+    ...baseCookieOptions,
+    maxAge: 0 //Expire Immediately
+}
+
+console.log('🍪 Cookie config:', {
+    environment: appConfig.nodeEnv,
     secure: isProd,
     sameSite: isProd ? 'none' : 'lax',
-    maxAge: 1 * 24 * 60 * 60* 1000, //1 day
-    path: '/api/auth/refresh' // only sent here
-};
+});

@@ -1,12 +1,12 @@
 // src/controllers/chart.controller.ts
 import { prisma } from "@db/prisma.js";
 import type { Request, Response } from "express";
-import { asyncHanlder } from "@utils/asyncHandler.js";
+import { asyncHandler } from "@utils/asyncHandler.js";
 import { AppError } from "../utils/AppError.js";
 import { subDays, startOfDay } from "date-fns";
 
 export class ChartController {
-  static getTransactionVolume = asyncHanlder(async (req: Request, res: Response) => {
+  static getTransactionVolume = asyncHandler(async (req: Request, res: Response) => {
     const userId = (req as any).userId;
     if (!userId) throw new AppError("Unauthorized", 401);
 

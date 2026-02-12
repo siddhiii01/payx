@@ -1,17 +1,26 @@
-import { generateAccessToken, generateRefreshToken } from "./jwtToken.js";
+import { generateAccessToken, generateRefreshToken, JWTPayload } from "./jwt.utils.js";
+import { hashPassword } from "./password.utils.js";
 
-export const issueToken = (user: {userId: number, tokenVersion: number}) => {
-    const accessToken = generateAccessToken({
-        userId: user.userId,
-        tokenVersion: user.tokenVersion
-    });
 
-    const refreshToken = generateRefreshToken({
-        userId: user.userId,
-        tokenVersion: user.tokenVersion
-    });
+//Issue a pair of tokens (access + refresh)
+export const issueTokenPair = async (payload: JWTPayload) => {
+    // Generate both tokens
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
 
-    
+    // Hash refresh token before storing 
+    const hashedRefreshToken = await hashPassword(refreshToken);
 
-    return {accessToken, refreshToken}
+    //Store hashed refresh token in database
+    await prisma.user.update({
+        where: {id: payload.userId},
+        data: {
+            refreshToken: hashedRefreshToken,
+        }
+    })
+
+    return {
+        accessToken,
+        refreshToken //send plain text to client 
+    }
 }

@@ -5,7 +5,6 @@ import { Router } from 'express';
 
 const onrampRoute = Router();
 
-//AuthMiddleware.authenticateUser,
-onrampRoute.post('/addtowallet',  onramptx);
+onrampRoute.post('/addtowallet',AuthMiddleware.authenticateUser,   onramptx);
 
 export default onrampRoute;
