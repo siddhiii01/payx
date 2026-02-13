@@ -8,20 +8,20 @@ A full-stack digital wallet application where users can add money from their ban
 
 ## Features
 
-### 🔐 Authentication
+### Authentication
 - JWT-based auth with access + refresh token rotation
 - Tokens stored in HTTP-only cookies (XSS protection)
 - Token versioning for immediate logout invalidation
 - Auto-refresh interceptor — users stay logged in without re-entering credentials
 
-### 🏦 On-Ramp (Bank → Wallet)
+###  On-Ramp (Bank → Wallet)
 - Select a bank (HDFC / AXIS / SBI) and enter an amount
 - Redirected to a dummy bank approval page
 - On approval, a webhook credits the wallet atomically
 - Idempotent webhook handler — safe against duplicate bank callbacks
 - All amounts stored in paise to avoid floating point errors
 
-### 💸 P2P Transfer (Wallet → Wallet)
+###  P2P Transfer (Wallet → Wallet)
 - Send money to any registered PayX user by phone number
 - Atomic Prisma transaction — debit + credit happen together or not at all
 - Ledger entries created for both sender and receiver
@@ -157,6 +157,4 @@ User fills form → PayX backend calls bank → Bank returns paymentUrl
 
 ---
 
-## Author
 
-Built by [siddhiii01](https://github.com/siddhiii01)
