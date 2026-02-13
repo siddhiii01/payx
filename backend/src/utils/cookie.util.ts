@@ -20,7 +20,7 @@ export const accessCookieOptions: CookieOptions = {
 //Refresh Token Cookie (long-lived)
 export const refreshCookieOptions: CookieOptions = {
     ...baseCookieOptions,
-    maxAge: 0,  // Expire immediately
+    maxAge: 7 * 24 * 60 * 60 * 1000,  
 }
 
 

@@ -1,6 +1,6 @@
 import { generateAccessToken, generateRefreshToken, JWTPayload } from "./jwt.utils.js";
 import { hashPassword } from "./password.utils.js";
-
+import { prisma } from "@db/prisma.js";
 
 //Issue a pair of tokens (access + refresh)
 export const issueTokenPair = async (payload: JWTPayload) => {

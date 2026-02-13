@@ -7,6 +7,7 @@ import { AppError } from "@utils/AppError.js";
 import { issueTokenPair } from "@utils/issueToken.util.js";
 import { accessCookieOptions, refreshCookieOptions, clearCookieOptions } from "@utils/cookie.util.js";
 import z from "zod";
+import { generateAccessToken, verifyRefreshToken } from "@utils/jwt.utils.js";
 
 export class AuthController {
 
@@ -188,4 +189,83 @@ export class AuthController {
         });
     });
     
+
+    //Token Refreshing 
+    //POST /api/auth/refresh
+    //Here the user send the refresh token (in cookie)
+    static refreshToken = asyncHandler(async (req: Request, res: Response) => {
+        //Extract refresh token from cookie
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) {
+            throw new AppError("No refresh token provided", 401);
+        }
+
+        //Verify refresh token signature and expiry
+        let decoded;
+        try {
+            decoded = verifyRefreshToken(refreshToken); //this fun does 2 things checks was token tampered with ? and checks if the token is expired
+        } catch (error) {
+            //token is expird on invalid
+            throw new AppError("Invalid or expired refresh token", 403);
+        }
+
+        // Get user from database
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.userId },
+            select: {
+                id: true,
+                email: true,
+                tokenVersion: true,
+                refreshToken: true,  // The HASHED refresh token
+            }
+        });
+
+        if (!user) {
+            throw new AppError("User not found", 403);
+        }
+
+        // Verify token version (check if user logged out)
+        if (user.tokenVersion !== decoded.tokenVersion) {
+            // User logged out - this token is from before logout
+            res.clearCookie("accessToken", clearCookieOptions);
+            res.clearCookie("refreshToken", clearCookieOptions);
+            throw new AppError("Token has been invalidated", 403);
+        }
+
+        // Verify the refresh token matches what's stored in DB
+        if (!user.refreshToken) {
+            throw new AppError("No refresh token found", 403);
+        }
+
+        const isValidRefreshToken = await comparePassword(
+            refreshToken,  // The token from cookie (plain text)
+            user.refreshToken  // The hashed token from DB
+        );
+
+        if (!isValidRefreshToken) {
+            res.clearCookie("accessToken", clearCookieOptions);
+            res.clearCookie("refreshToken", clearCookieOptions);
+            throw new AppError("Invalid refresh token", 403);
+        }
+
+        // Generate NEW access token (with current tokenVersion)
+        const newAccessToken = generateAccessToken({
+            userId: user.id,
+            tokenVersion: user.tokenVersion, //db's version
+            email: user.email,
+        });
+
+        // Set new access token cookie
+        res.cookie("accessToken", newAccessToken, accessCookieOptions);
+
+
+        return res.status(200).json({
+            success: true,
+            message: "Token refreshed successfully"
+        });
+
+
+
+    });
+
 }

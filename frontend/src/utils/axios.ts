@@ -1,21 +1,21 @@
 import axios from 'axios';
-//custom Axios instance with a preconfigured base URL so every request 
-// made with api automatically points to backend
 
-const API_URL = "https://payx-backend.onrender.com";
-console.log("🌐 Axios Base URL:", API_URL); // Add this line
+const API_URL = import.meta.env.VITE_API_URL;
+
+//this create a custom axios instance with pre configured settings
 export const api = axios.create({
-    baseURL : API_URL,
-    withCredentials: true //allow browser to attach cookies with req
+    baseURL : API_URL, //every url will start with this url 
+    withCredentials: true //this tells browser when making any req please include any cookies
 });
 
-// Track if we're currently refreshing to prevent multiple refresh calls
-let isRefreshing = false;
+// Track refresh state to prevent multiple simultaneous refresh calls
+let isRefreshing = false; //are we already getting a new token 
 let failedQueue: Array<{
-    resolve: (value?: any) => void;
-    reject: (reason?: any) => void;
-}> = [];
+    resolve: (value?: any) => void; //calls when refresh succedds
+    reject: (reason?: any) => void; //calls when refreh fails
+}> = []; //array that stores waiting request
 
+//Process all queued request after token refresh
 const processQueue = (error: any = null) => {
     failedQueue.forEach(promise => {
         if (error) {
@@ -27,13 +27,18 @@ const processQueue = (error: any = null) => {
     failedQueue = [];
 };
 
+
+//main interceptor -> every response passes through  -> handle 401 erros and auto-refreshes token
 api.interceptors.response.use(
+    //success response
     (response) => response, 
+
+    //error response - hanlde 401
     async (error) => {
         const originalRequest = error.config;
 
         // If the error is 401 and we haven't tried to refresh yet
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/api/auth/refresh')) {
             
             // If we're already refreshing, queue this request
             if (isRefreshing) {
@@ -44,18 +49,19 @@ api.interceptors.response.use(
                     .catch(err => Promise.reject(err));
             }
 
+
             originalRequest._retry = true;
             isRefreshing = true;
 
             try {
-                console.log('🔄 Access token expired, attempting to refresh...');
+                console.log('Access token expired, attempting to refresh...');
                 
-                // Call refresh endpoint - IMPORTANT: matches your backend route
-                await api.post("/refresh");
+                // Call refresh endpoint -> should match backend
+                await api.post("/api/auth/refresh");
                 
-                console.log('✅ Token refresh successful');
+                console.log('Token refresh successful');
                 
-                // Process queued requests
+                // Process all queued requests
                 processQueue();
                 isRefreshing = false;
                 
@@ -63,19 +69,20 @@ api.interceptors.response.use(
                 return api(originalRequest);
                 
             } catch (refreshError: any) {
-                console.error("❌ Token refresh failed:", refreshError);
+                console.error("Token refresh failed:", refreshError.response?.data || refreshError.message);
                 
                 // Process queued requests with error
                 processQueue(refreshError);
                 isRefreshing = false;
                 
-                // Clear any auth state
+                // Clear any stored user data
                 localStorage.removeItem('user');
                 
                 // Only redirect to login if we're not already there
-                if (!window.location.pathname.includes('/login')) {
-                    console.log('🚪 Redirecting to login...');
-                    window.location.href = "/login";
+                 if (!window.location.pathname.includes('/login') && 
+                    !window.location.pathname.includes('/signup')) {
+                    console.log('Redirecting to login...');
+                    window.location.href = '/login';
                 }
                 
                 return Promise.reject(refreshError);
@@ -83,18 +90,6 @@ api.interceptors.response.use(
         }
 
         // For other errors, just reject
-        return Promise.reject(error);
-    }
-);
-
-// Optional: Request interceptor for debugging
-api.interceptors.request.use(
-    (config) => {
-        console.log(`📡 ${config.method?.toUpperCase()} ${config.url}`);
-        return config;
-    },
-    (error) => {
-        console.error('Request error:', error);
         return Promise.reject(error);
     }
 );

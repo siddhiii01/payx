@@ -7,6 +7,7 @@ const authRoutes = Router();
 //Public routes (no authentication required)
 authRoutes.post('/signup', AuthController.register);
 authRoutes.post('/login', AuthController.login);
+authRoutes.post('/refresh', AuthController.refreshToken); 
 
 //Protected routes (authentication required)
 authRoutes.post('/logout', AuthMiddleware.authenticateUser, AuthController.logout);
