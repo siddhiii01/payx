@@ -3,7 +3,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, type JSX } from 'react';
 import { Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-// import { paymentSchema, type Payment } from "shared_schemas";
 import { sendP2PPayment } from './P2PTransferAPI';
 import {z} from "zod"
 
