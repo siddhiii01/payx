@@ -133,9 +133,13 @@ export const onramptx = async (req: Request, res: Response) => {
 
         // User-friendly message 
         const userMessage =
-            error.response?.data?.message ||
-            "Failed to initiate payment. Please try again later.";
-            
+            error.response?.status === 429
+                ? "Bank server is waking up. Please wait 30 seconds and try again."
+                : error.code === "ECONNREFUSED" || error.code === "ETIMEDOUT"
+                ? "Cannot reach bank server. Please try again in a moment."
+                : error.response?.data?.message ||
+                "Failed to initiate payment. Please try again later.";
+                
         return res.status(500).json({ 
             success: false,
             message: userMessage
